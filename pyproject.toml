@@ -7,8 +7,8 @@ build-backend = "setuptools.build_meta"
 name = "vsopy"
 version = "0.1.0"
 description = "A Python package for astrophotometry automation."
-authors = [{name ="Dmitry Mukhortov", email = "<d.v.mukhortov@gmail.com>"}]
-maintainers = [{name ="Dmitry Mukhortov", email = "<d.v.mukhortov@gmail.com>"}]
+authors = [{name ="Dmitry Mukhortov", email = "d.v.mukhortov@gmail.com"}]
+maintainers = [{name ="Dmitry Mukhortov", email = "d.v.mukhortov@gmail.com"}]
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICEN[CS]E.*"]
