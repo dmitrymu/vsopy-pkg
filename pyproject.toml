@@ -14,11 +14,11 @@ license = "BSD"
 license-files = ["LICEN[CS]E.*"]
 requires-python = ">=3.8"
 dependencies = [
-  "bottleneck",
   "astropy",
+  "astroquery",
+  "bottleneck",
   "ccdproc",
   "photutils",
-  "astroquery",
 ]
 keywords = ["astrophotometry", "astropy", "aavso"]
 classifiers = [
