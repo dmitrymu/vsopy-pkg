@@ -8,9 +8,9 @@ from astropy.nddata import CCDData
 from astropy.stats import mad_std
 from astropy.time import Time
 from pathlib import Path
-from vso.reduce import CalibrationMatcher
-from vso.data import CameraRegistry
-from vso.util import FrameType
+from vsopy.reduce import CalibrationMatcher
+from vsopy.data import CameraRegistry
+from vsopy.util import FrameType
 
 def round_Mb(x):
     return (x >> 20) << 20
