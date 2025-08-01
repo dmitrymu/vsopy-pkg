@@ -25,3 +25,9 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python"
 ]
+
+[project.scripts]
+vso-create-master = "vsopy.scripts.create_master:main"
+vso-list-images = "vsopy.scripts.list_images:main"
+vso-batch-images = "vsopy.scripts.batch_images:main"
+vso-measure-images = "vsopy.scripts.measure_images:main"
