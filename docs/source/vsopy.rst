@@ -10,7 +10,6 @@ Subpackages
    vsopy.data
    vsopy.mock
    vsopy.phot
-   vsopy.plot
    vsopy.reduce
    vsopy.util
 
