@@ -21,39 +21,43 @@ def measure_photometry(image, stars, aperture, extended=False):
     (https://photutils.readthedocs.io). Uncertainty fromthe image is propagated to
     the flux values. Flux is normalized by the image exposure to electrons per second.
 
-    The flux for central aperture F_c contains both star and sky electrons, the flux
-    for annulus F_a - sky electrons only. Number of sky electrons in the central
+    The flux for central aperture :math:`F_c` contains both star and sky electrons, the flux
+    for annulus :math:`F_a` - sky electrons only. Number of sky electrons in the central
     aperture is
 
-    F_{sky} = F_{sky mean} * (pixel count for central aperture)
+    .. math:: F_{sky} = \\frac{F_{a}}{N_{ann}} N_c,
+
+    where :math:`N_{ann}` and :math:`N_c` are pixel counts for the annulus
+    and the central aperture respectively.
 
     Then star flux in electons is
 
-    F_{star} = F_c - F_{sky}
+    .. math:: F_{star} = F_c - F_{sky}
 
     and signal to noise ratio is
 
-    SNR = F_{star} / \\sqrt{F_star + 2 * F_sky}
+    .. math:: SNR = \\frac{F_{star}}{\\sqrt{F_{star} + 2 F_{sky}}}
 
-    To convert flux to magnitude, an arbitrary scale value F_0 = 1e6 e/s is used:
+    To convert flux to magnitude, an arbitrary scale value
+    :math:`F_0 = 10^6 \\frac{e}{s}` is used:
 
-    M = -2.5 * log_{10}(F_{star} / F_0)
+    .. math:: M = -2.5 log_{10}(F_{star} / F_0)
 
     Args:
-        image (CCDData):            calibrated image, pixel counts in electrons.
-        stars (table-like):         list of stars to be measured: AUID, centroid, optional name
-        r (Quantity):               radius of the circular aperture
-        r_ann (Quantity, Quantity): inner and outer radii of the annulus
-        extended (bool):            return additional stats (FWHM, ellipticity etc)
+        - image (CCDData):            calibrated image, pixel counts in electrons.
+        - stars (table-like):         list of stars to be measured: AUID, centroid, optional name
+        - r (Quantity):               radius of the circular aperture
+        - r_ann (Quantity, Quantity): inner and outer radii of the annulus
+        - extended (bool):            return additional stats (FWHM, ellipticity etc)
 
     Returns:
         QTable: photometry results:
-                auid,
-                centroid,
-                flux (e/s)
-                SNR (db)
-                Magnitude with uncertainty,
-                relative peak (max count / saturation level)
+                - auid,
+                - centroid,
+                - flux (:math:`\\frac{e}{s}`)
+                - SNR (db)
+                - Magnitude with uncertainty,
+                - relative peak (max count / saturation level)
 
     """
     result = QTable(stars['auid', 'radec2000'])
