@@ -42,7 +42,8 @@ class AavsoApi:
             file-like: A file-like object containing the downloaded content or an error message.
 
         Raises:
-            Exception: If the download fails, an error message is returned in a StringIO object.
+            Exception: If the download fails, an error message is returned
+            as the content of :py:class:`io.StringIO` object.
         """
         try:
             return open(download_file(uri, cache=self.cache_web_content))
