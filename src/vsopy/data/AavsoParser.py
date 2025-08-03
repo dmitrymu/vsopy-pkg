@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import QTable, Column
 from typing import Tuple
+from warnings import deprecated
 
 VSX_VOTABLE_FIELDS = set([
     'auid', 'name', 'const', 'radec2000', 'varType',
@@ -48,7 +49,7 @@ class AavsoParser:
         Returns:
             QTable: List of standard fields. Fields include:
                 - name (str): Name of the standard field
-                - radec2000 (astropy.coordinates.SkyCoord): 
+                - radec2000 (astropy.coordinates.SkyCoord):
                     SkyCoord object with RA and Dec coordinates (epoch J2000)
                 - fov (arcmin): Field of view in arcminutes
                 - count (int): Number of stars in the field
@@ -82,7 +83,7 @@ class AavsoParser:
                 - auid (str): AAVSO unique identifier for the star
                 - name (str): Name of the star
                 - const (str): Constellation of the star
-                - radec2000 (astropy.coordinates.SkyCoord): 
+                - radec2000 (astropy.coordinates.SkyCoord):
                     SkyCoord object with RA and Dec coordinates (epoch J2000)
                 - varType (str): Type of variable star
                 - maxMag (float): Maximum magnitude of the star
@@ -115,6 +116,7 @@ class AavsoParser:
                   if name in VSX_VOTABLE_FIELDS}
         return QTable(result)
 
+    @deprecated("Use parse_norm_chart instead")
     def parse_chart(self, text: str,
                     band_set=set(['U', 'B', 'V', 'Rc', 'Ic'])) -> QTable:
         """Parse chart photometry data from AAVSO VSP
@@ -161,8 +163,6 @@ class AavsoParser:
                         unit=u.mag,
                         dtype=[('mag', 'f4'), ('err', 'f4')])
                  for band in band_set}
-
-        # TODO: explore masked columns
 
         result = dict(
             auid=[star['auid'] for star in chart['photometry']],
