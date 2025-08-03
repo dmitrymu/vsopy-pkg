@@ -1,6 +1,14 @@
+# VS Code
 .vscode/
+
+# Python
 .venv/
 __pycache__
+
+# pytest
 .pytest_cache
 .coverage
 *.egg-info
+
+# sphinx
+docs/build/
