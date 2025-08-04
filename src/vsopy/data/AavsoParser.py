@@ -41,18 +41,18 @@ class AavsoParser:
         pass
 
     def parse_std_fields(self, text: str) -> QTable:
-        """Parse result of AavsoApi.get_std_fields.
+        """Parse result of :py:meth:`AavsoApi.get_std_fields`
 
-        Args:
-            text (str): JSON text returned by AavsoApi.get_std_fields
+        :param text: JSON text returned by AAVSO API
+        :type text: str
+        :return: Table of standard fields. Columns include:
 
-        Returns:
-            QTable: List of standard fields. Fields include:
-                - name (str): Name of the standard field
-                - radec2000 (astropy.coordinates.SkyCoord):
-                    SkyCoord object with RA and Dec coordinates (epoch J2000)
-                - fov (arcmin): Field of view in arcminutes
-                - count (int): Number of stars in the field
+            - name (str): Name of the standard field
+            - radec2000: (:py:class:`~astropy.coordinates.SkyCoord`)  field center coordinates (epoch J2000)
+            - fov (:py:class:`~astropy.coordinates.Quantity`, arcmin): Field of view
+            - count (int): Number of stars in the field
+
+        :rtype: :py:class:`~astropy.table.QTable`
         """
         data = json.loads(text)
 
@@ -67,29 +67,31 @@ class AavsoParser:
         return QTable(result)
 
     def parse_vsx_votable(self, xml: str) -> QTable:
-        """Parse star data from AAVSO VSX
+        """Parse star data from AAVSO VSX VOTable
+
+        This method parses a VOTable XML string returned by the AAVSO API
+        for a star in the VSX database. It extracts relevant fields and
+        returns them in a structured QTable format.
 
         Note: AAVSO returns VOTable version 1.0, which is not supported by
         astropy.table.VOTable, so we parse it manually.
 
-        Args:
-            xml (str): XML VOTABLE text from AavsoApi.get_vsx_votable
+        :param xml: XML VOTABLE text from :py:meth:`AavsoApi.get_vsx_votable`
+        :type xml: str
+        :raises RuntimeError: if VOTABLE is empty or contains multiple strings
+        :return: :py:class:`~astropy.table.QTable` with star data. Single row is expected, fields include:
 
-        Raises:
-            RuntimeError: if VOTABLE is empty or contains multiple strings
+            - auid (str): AAVSO unique identifier for the star
+            - name (str): Name of the star
+            - const (str): Constellation of the star
+            - radec2000 (:py:class:`~astropy.coordinates.SkyCoord`): coordinates of the star (epoch J2000)
+            - varType (str): Type of variable star
+            - maxMag (float): Maximum magnitude of the star
+            - maxPass (str): Date of maximum magnitude observation
+            - minMag (float): Minimum magnitude of the star
+            - minPass (str): Date of minimum magnitude observation
 
-        Returns:
-            QTable: Single row table expected, fields include:
-                - auid (str): AAVSO unique identifier for the star
-                - name (str): Name of the star
-                - const (str): Constellation of the star
-                - radec2000 (astropy.coordinates.SkyCoord):
-                    SkyCoord object with RA and Dec coordinates (epoch J2000)
-                - varType (str): Type of variable star
-                - maxMag (float): Maximum magnitude of the star
-                - maxPass (str): Date of maximum magnitude observation
-                - minMag (float): Minimum magnitude of the star
-                - minPass (str): Date of minimum magnitude observation
+        :rtype: QTable
         """
         root = ET.fromstring(xml)
         table = root.find('RESOURCE').find('TABLE')
@@ -119,27 +121,9 @@ class AavsoParser:
     @deprecated("Use parse_norm_chart instead")
     def parse_chart(self, text: str,
                     band_set=set(['U', 'B', 'V', 'Rc', 'Ic'])) -> QTable:
-        """Parse chart photometry data from AAVSO VSP
+        """Parse chart photometry data
 
-        Note: this method is obsolete, use parse_norm_chart instead.
-
-        Args:
-            text (str): JSON text returned by AavsoApi.get_star_chart,
-                        AavsoApi.get_std_field_chart, or AavsoApi.get_chart_by_id
-            band_set ([str], optional): list of bands to be stored.
-                   Defaults to set(['U', 'B', 'V', 'Rc', 'Ic']).
-
-        Raises:
-            RuntimeError: if received data indicates any error.
-
-        Returns:
-            QTable: photometry data, fields include:
-                - auid (str): AAVSO unique identifier for the star
-                - radec2000 (astropy.coordinates.SkyCoord):
-                    SkyCoord object with RA and Dec coordinates (epoch J2000)
-                - a column for each band in band_set, named by the band, value is a tuple:
-                    - mag (float): Magnitude of the star in the given band
-                    - err (float): Error in magnitude measurement
+        This method is obsolete, use :py:meth:`parse_norm_chart` instead
         """
         chart = json.loads(text)
         if 'errors' in chart:
@@ -178,32 +162,28 @@ class AavsoParser:
 
         return QTable(result, meta=extract_metadata(chart))
 
-    def parse_norm_chart(self, text: str) -> Tuple[QTable, QTable]:
+    def parse_norm_chart(self, text: str) -> tuple[QTable, QTable]:
         """Parse chart photometry data from AAVSO VSP to normalized form
 
-        Args:
-            text (str): JSON text returned by :py:meth:`AavsoApi.get_star_chart`,
-                        AavsoApi.get_std_field_chart, or AavsoApi.get_chart_by_id
+        :param text: JSON text returned by py:meth:`AavsoApi.get_star_chart`, py:meth:`AavsoApi.get_std_field_chart`, or py:meth:`AavsoApi.get_chart_by_id`
+        :type text: str
+        :return: Tuple of two :py:class:`~astropy.table.QTable`:
 
-        Raises:
-            RuntimeError: if received data indicates any error.
+            - centroids: star centroids, fields include:
 
-        Returns:
-            Tuple of two :py:class:`~astropy.table.QTable`:
+                - auid: (str) AAVSO unique identifier for the star
+                - radec2000: (:py:class:`~astropy.coordinates.SkyCoord`) chart center coordinates (epoch J2000)
 
-            :centroids: star centroids, fields include:
+            - sequence: photometry data, fields include:
 
-                :auid: (str) AAVSO unique identifier for the star
-                :radec2000: (:py:class:`~astropy.coordinates.SkyCoord`) SkyCoord object with RA and Dec coordinates (epoch J2000)
+                - auid: (str) AAVSO unique identifier for the star
+                - band: (str) Band of the measurement
+                - M: Magnitude and error in the given band, dtype is the tuple:
 
-            :sequence: photometry data, fields include:
+                    - mag: (float) Magnitude of the star in the given band
+                    - err: (float) Error in magnitude measurement
 
-                :auid: (str) AAVSO unique identifier for the star
-                :band: (str) Band of the measurement
-                :M: Magnitude and error in the given band, dtype is the tuple:
-
-                    :mag: (float) Magnitude of the star in the given band
-                    :err: (float) Error in magnitude measurement
+        :rtype: tuple[QTable, QTable]
         """
         chart = json.loads(text)
         if 'errors' in chart:
