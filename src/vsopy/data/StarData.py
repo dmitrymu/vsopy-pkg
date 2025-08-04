@@ -19,13 +19,15 @@ class StarData:
         - Photometry tables are cached in memory
     """
     def __init__(self, charts_dir, cache_web_content=True, normalize_charts=True):
-        """ Create data API
+        """High-level API to acess AAVSO data.
 
-            Parameters:
-
-            charts-dir: path-like pointing to the directory to store serialized photometry data
-            cache_web_content: bool, passed to astropy.utils.data.download_file
-            normalize_charts: bool, return normalized chart as a tuple (centroids, sequence)
+        :param charts_dir: directory to store serialized charts.
+        :type charts_dir: path-like
+        :param cache_web_content: specify whether to cache downloaded content. Defaults to True.
+        :type cache_web_content: bool, optional
+        :param normalize_charts: whether to normalize charts into two separate
+            tables (centroids and sequence) or not. Defaults to True.
+        :type cache_web_content: bool, optional
         """
         self.normalize_ = normalize_charts
         self.charts_dir_ = Path(charts_dir)

@@ -47,3 +47,5 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
     }
+
+autoclass_content = "both"  # This ensures both class and __init__ docstrings are included

@@ -11,7 +11,7 @@ class PersistentTable:
             Parameters:
             path: path-like, pointing to the serialized table representation.
             initializer: a function called with no arguments providing QTable object
-                         if no serialized table exists
+            if no serialized table exists
         """
         self.path_ = Path(path)
         self.table_ = None
