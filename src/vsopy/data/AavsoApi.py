@@ -1,3 +1,4 @@
+import functools
 import io
 import astropy.units as u
 from astropy.utils.data import download_file
@@ -32,8 +33,8 @@ class AavsoApi:
         """Fetch content from the given URI.
 
         This method downloads the content from the specified URI and returns
-        a file-like object. If the download fails, it returns a StringIO object
-        containing an error message.
+        a file-like object. If the download fails, it returns an
+        :py:class:`io.StringIO` object containing an error message.
 
         Args:
             uri (str): The URI to fetch content from.
@@ -91,6 +92,7 @@ class AavsoApi:
         fetch content. The decorator will handle the fetching and return the
         content as a string.
         """
+        @functools.wraps(uri)
         def fetcher(self, *args, **kwargs):
             return self.fetch_content(uri(self, *args, **kwargs))
         return fetcher
@@ -119,8 +121,7 @@ class AavsoApi:
         Args:
             star_name (str): Name of the target star.
             fov (Quantity, optional): Field of view. Defaults to 60*u.arcmin.
-            maglimit (Quantity, optional): Limit the list of stars by magnitude.
-                            Defaults to 16*u.mag.
+            maglimit (Quantity, optional): Limit the list of stars by magnitude. Defaults to 16*u.mag.
 
         Returns:
             str: JSON string containing the list of comparison stars.

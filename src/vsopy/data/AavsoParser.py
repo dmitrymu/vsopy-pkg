@@ -182,24 +182,28 @@ class AavsoParser:
         """Parse chart photometry data from AAVSO VSP to normalized form
 
         Args:
-            text (str): JSON text returned by AavsoApi.get_star_chart,
+            text (str): JSON text returned by :py:meth:`AavsoApi.get_star_chart`,
                         AavsoApi.get_std_field_chart, or AavsoApi.get_chart_by_id
 
         Raises:
             RuntimeError: if received data indicates any error.
 
         Returns:
-            Tuple of two QTable:
-            - 'centroids': star centroids, fields include:
-                - auid (str): AAVSO unique identifier for the star
-                - radec2000 (astropy.coordinates.SkyCoord):
-                    SkyCoord object with RA and Dec coordinates (epoch J2000)
-            - 'sequence': photometry data, fields include:
-                - auid (str): AAVSO unique identifier for the star
-                - band (str): Band of the measurement
-                - M (Column): Magnitude and error in the given band, dtype is a tuple:
-                    - mag (float): Magnitude of the star in the given band
-                    - err (float): Error in magnitude measurement
+            Tuple of two :py:class:`~astropy.table.QTable`:
+
+            :centroids: star centroids, fields include:
+
+                :auid: (str) AAVSO unique identifier for the star
+                :radec2000: (:py:class:`~astropy.coordinates.SkyCoord`) SkyCoord object with RA and Dec coordinates (epoch J2000)
+
+            :sequence: photometry data, fields include:
+
+                :auid: (str) AAVSO unique identifier for the star
+                :band: (str) Band of the measurement
+                :M: Magnitude and error in the given band, dtype is the tuple:
+
+                    :mag: (float) Magnitude of the star in the given band
+                    :err: (float) Error in magnitude measurement
         """
         chart = json.loads(text)
         if 'errors' in chart:
