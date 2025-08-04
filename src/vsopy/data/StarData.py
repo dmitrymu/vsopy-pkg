@@ -11,6 +11,7 @@ class StarData:
 
         Provides the API to download photometry data for  variable stars
         and standard fields.  Uses three levels of caching:
+
         - HTTP responses from AAVSO are cached by astropy.utils.data.download_file
           (see https://docs.astropy.org/en/stable/utils/data.html#cache-management)
         - Photometry tables are stored in charts directory in ECSV format

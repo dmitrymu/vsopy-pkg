@@ -42,11 +42,11 @@ class PersistentTable:
         """ Convenience method to create empty table with required structure.
 
             Parameters:
-            template: QTable providing structure
+            template: :py:class:`~astropy.table.QTable` providing structure
 
-            returns
-            result:  Empty QTable with the same set of columns as template,
-                     both names and data types
+            Returns
+            result:  Empty :py:class:`~astropy.table.QTable` with the same set
+            of columns as template, both names and data types
         """
         return QTable(template)[[]]
 
@@ -72,7 +72,7 @@ class PersistentTable:
 
             Returns:
             row:  None of table does not have table[field]==key;
-                  row if key matches exactly one value in 'field'
+            row if key matches exactly one value in 'field'
 
             Raises:
                 KeyError if 'key' matches multiple rows.
@@ -89,7 +89,7 @@ class PersistentTable:
 
             Returns:
             row:  None of table does not have table[field]==key;
-                  row if key matches exactly one value in 'field'
+            row if key matches exactly one value in 'field'
 
             Raises:
                 KeyError if 'key' matches multiple rows.
