@@ -4,10 +4,6 @@ from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 from unittest.mock import patch
 from vsopy.data import StarData, PersistentTable, AavsoApi, AavsoParser
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../../src')))
 
 
 
