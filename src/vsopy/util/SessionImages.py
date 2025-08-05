@@ -4,10 +4,25 @@ import numpy as np
 
 from astropy.table import QTable
 from astropy.time import Time
+from vsopy.util import TargetLayout
 
 
-def session_image_list(image_layout):
+def session_image_list(image_layout:TargetLayout):
+    """Traverse image folder structure and return a table of images.
 
+    :param image_layout: Layout object that provides lights_dir property
+                         for accessing the image directories.
+    :type image_layout: :py:class:`vsopy.util.TargetLayout`
+    :return: Table containing image metadata.
+    :rtype: :py:class:`~astropy.table.QTable` with columns:
+        - image_id: Unique identifier for the image (sequential int).
+        - filter: Filter used for the image.
+        - time: Observation time of the image.
+        - exposure: Exposure time of the image in seconds.
+        - airmass: Air mass at the time of observation.
+        - temperature: CCD temperature during the exposure.
+        - path: Full path to the image file.
+    """
     KEYS = set(['file', 'exptime', 'ccd-temp', 'filter', 'airmass', 'date-obs'])
 
     files = QTable([dict({key: row[key]
