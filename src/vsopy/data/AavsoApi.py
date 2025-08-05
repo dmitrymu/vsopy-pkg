@@ -2,6 +2,7 @@ import functools
 import io
 import astropy.units as u
 from astropy.utils.data import download_file
+from astropy.units import Quantity
 
 
 def name_for_api(star_name):
@@ -102,7 +103,8 @@ class AavsoApi:
                 f"&ident={name_for_api(star_name)}")
 
     @_fetch_content
-    def get_star_chart(self, star_name: str, fov=60*u.arcmin, maglimit=16*u.mag) -> str:
+    def get_star_chart(self, star_name: str, fov: Quantity = 60*u.arcmin,
+                       maglimit: Quantity = 16*u.mag) -> str:
         """Get comparison stars for a given target star frrom AAVSO VSP tool
 
         :param star_name: Name of the target star.

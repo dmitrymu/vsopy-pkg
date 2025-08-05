@@ -5,6 +5,7 @@
 .venv/
 __pycache__
 .mypy_cache
+build
 
 # pytest
 .pytest_cache

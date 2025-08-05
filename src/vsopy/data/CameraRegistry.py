@@ -1,18 +1,28 @@
 import astropy.units as u
 import numpy as np
+from astropy.units import Quantity
+from collections.abc import Callable
+
 
 def ccd_gain(score, full_well, adc_bits):
     scale = (1 << adc_bits) * u.adu
     return full_well / scale / (10 ** (score / (20 * u.db)))
 
-UNITY_XFM = lambda g, full_well, adc_bits: 1.0*u.electron/u.adu
 
-ASI_XFM = lambda g, full_well, adc_bits : ccd_gain(g * u.db / 10, full_well, adc_bits)
+def UNITY_XFM(g, full_well, adc_bits): return 1.0*u.electron/u.adu
+
+
+def ASI_XFM(g, full_well, adc_bits): return ccd_gain(
+    g * u.db / 10, full_well, adc_bits)
+
 
 class Camera:
     """Camera class representing a CCD camera with specific characteristics.
     """
-    def __init__(self, full_well, adc_bits, xfm=UNITY_XFM, read_noise=None):
+
+    def __init__(self, full_well: Quantity, adc_bits: int,
+                 xfm: Callable[[float, Quantity, int], Quantity] = UNITY_XFM,
+                 read_noise: tuple[list[float], list[Quantity]] = None):
         """Create a Camera instance.
 
         :param full_well: Full well capacity in electrons
@@ -29,7 +39,7 @@ class Camera:
         self.xfm_ = xfm
         self.read_noise_ = read_noise
 
-    def gain_to_e(self, score):
+    def gain_to_e(self, score: float) -> Quantity:
         """ Convert gain score to electrons.
 
         :param score: Gain score in camera units
@@ -39,7 +49,7 @@ class Camera:
         """
         return self.xfm_(score, self.full_well_, self.adc_bits_)
 
-    def read_noise(self, score):
+    def read_noise(self, score: float) -> Quantity:
         """Camera read noise in electrons for a given gain score.
 
         :param score: Gain score in camera units
@@ -48,10 +58,10 @@ class Camera:
         :rtype: :py:class:`~astropy.units.Quantity`
         """
         return np.interp(score, self.read_noise_[0], self.read_noise_[1]) \
-               if self.read_noise_ else None
+            if self.read_noise_ else None
 
     @property
-    def adu_scale(self):
+    def adu_scale(self) -> int:
         """Scale factor to convert pixel value to ADU count.
 
         :return: :math:`2^{16 - N}`, where :math:`N` is the number of bits in the ADC.
@@ -60,13 +70,14 @@ class Camera:
         return 1 << (16 - self.adc_bits_)
 
     @property
-    def max_adu(self):
+    def max_adu(self) -> int:
         """Maximum ADU value for the camera.
 
         :return: :math:`2^{N}`, where :math:`N` is the number of bits in the ADC.
-        :rtype:  :py:class:`~astropy.units.Quantity`
+        :rtype:  int
         """
         return (1 << self.adc_bits_) * u.adu
+
 
 class CameraRegistry:
     """Registry of known cameras
@@ -81,11 +92,12 @@ class CameraRegistry:
                                        read_noise=([0, 50, 99, 100, 200, 400],
                                                    [3.8, 3.4, 3.0, 1.46, 1.27, 0.9] * u.electron))
     }
+
     def __init__(self):
         pass
 
     @staticmethod
-    def get(name):
+    def get(name) -> Camera:
         """Get a camera by its name from the registry.
 
         :param name: Name of the camera to retrieve
@@ -94,5 +106,5 @@ class CameraRegistry:
         :rtype: :py:class:`Camera`
         """
         return CameraRegistry.KNOWN_CAMERAS[name] \
-               if name in CameraRegistry.KNOWN_CAMERAS \
-               else None
+            if name in CameraRegistry.KNOWN_CAMERAS \
+            else None

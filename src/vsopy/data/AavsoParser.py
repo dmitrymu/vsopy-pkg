@@ -4,7 +4,6 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import QTable, Column
-from typing import Tuple
 from warnings import deprecated
 
 VSX_VOTABLE_FIELDS = set([
@@ -120,7 +119,7 @@ class AavsoParser:
 
     @deprecated("Use parse_norm_chart instead")
     def parse_chart(self, text: str,
-                    band_set=set(['U', 'B', 'V', 'Rc', 'Ic'])) -> QTable:
+                    band_set:set[str]=set(['U', 'B', 'V', 'Rc', 'Ic'])) -> QTable:
         """Parse chart photometry data
 
         This method is obsolete, use :py:meth:`parse_norm_chart` instead
