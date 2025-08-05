@@ -74,23 +74,27 @@ class PersistentTable:
         :param key: the value, type must match the data type of the column
         :type key: Any
         :return: table row if table[field]==key;
-                 None if key does not match any value in 'field'; 
+                 None if key does not match any value in 'field';
         :rtype: Row | None
         :raises: KeyError if 'key' matches multiple rows.
-        """        
+        """
         rows = self.table_[self.table_[field] == key]
-        return None if len(rows) == 0 else rows[0] if len(rows) == 1 else KeyError(f"{len(rows)} rows found for {field}={key}")
+        if len(rows) > 1:
+            raise KeyError(f"{len(rows)} rows found for {field}={key}")
+        return None if len(rows) == 0 else rows[0]
 
     def row_by_keys(self, keys:dict[str, Any]) -> Row | None:
         """Select row matching values of multiple fields
 
         :param keys: dictionary with field names as keys and values to match
-        :type keys: dict[str, Any] 
+        :type keys: dict[str, Any]
         :return: table row matching all key-value pairs;
                  None if there is no match;
         :rtype: Row | None
-        :raises: KeyError if multiple rows match the criteria. 
-        """        
+        :raises: KeyError if multiple rows match the criteria.
+        """
         filter = np.all([self.get()[field] == val for field, val in keys.items()], axis=0)
         rows = self.get()[filter]
-        return None if len(rows) == 0 else rows[0] if len(rows) == 1 else KeyError(f"{len(rows)} rows found for {field}={key}")
+        if len(rows) > 1:
+            raise KeyError(f"{len(rows)} rows found for {keys}")
+        return None if len(rows) == 0 else rows[0]

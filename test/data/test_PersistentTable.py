@@ -137,16 +137,30 @@ class PersistentTableTest(unittest.TestCase):
             id=2,
             value=4242
         )
+        row3 = dict(
+            name='c',
+            id=3,
+            value=4241
+        )
+        row4 = dict(
+            name='d',
+            id=3,
+            value=4240
+        )
         table = PersistentTable(TABLE_PATH,
                                 initializer=lambda: PersistentTable.init_from_template(template))
         t = table.get()
         self.assertEqual(len(t), 0)
         t = table.append(row1)
         t = table.append(row2)
-        self.assertEqual(len(t), 2)
+        t = table.append(row3)
+        t = table.append(row4)
+        self.assertEqual(len(t), 4)
         self.assertDictEqual(dict(table.row_by_key('name', 'a')), row1)
         self.assertDictEqual(dict(table.row_by_key('id', 2)), row2)
         self.assertIsNone(table.row_by_key('id', 42))
+        with self.assertRaises(KeyError):
+            table.row_by_key('id', 3)  # multiple rows with id=3
 
     @patch(f"vsopy.data.PersistentTable.QTable.write")
     def test_row_by_keys(self, _):
@@ -170,6 +184,11 @@ class PersistentTableTest(unittest.TestCase):
             id=2,
             value=4242
         )
+        row4 = dict(
+            name='a',
+            id=5,
+            value=44
+        )
         table = PersistentTable(TABLE_PATH,
                                 initializer=lambda: PersistentTable.init_from_template(template))
         t = table.get()
@@ -177,6 +196,9 @@ class PersistentTableTest(unittest.TestCase):
         t = table.append(row1)
         t = table.append(row2)
         t = table.append(row3)
-        self.assertEqual(len(t), 3)
+        t = table.append(row4)
+        self.assertEqual(len(t), 4)
         self.assertDictEqual(dict(table.row_by_keys(dict(name='a', value=42))), row1)
         self.assertIsNone(table.row_by_keys(dict(name='a', value=40)))
+        with self.assertRaises(KeyError):
+            table.row_by_keys(dict(name='a', value=44))  # multiple rows with name='a' and value=44
