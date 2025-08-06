@@ -24,9 +24,22 @@ def create_simple_transform(A:np.ndarray, B:np.ndarray,
     Given an ensemble of stars with both standard (:math:`A`, :math:`B`) and instrumental
     (:math:`a`, :math:`b`) magnitudes known for two bands, we fit two linear regressions:
 
-    .. math:: a - b = T_{ab} (A - B) + Z_{ab}
-    .. math:: A - a = T_a (A - B) + Z_a
-    .. math:: B - b = T_b (A - B) + Z_b
+    .. math::
+        :label: create.1
+
+        a - b = T_{ab} (A - B) + Z_{ab}
+
+    .. math::
+        :label: create.2
+
+        A - a = T_a (A - B) + Z_a
+
+    Instead of :eq:`create.2`, we can also use the following equation:
+
+    .. math::
+        :label: create.3
+
+        B - b = T_b (A - B) + Z_b
 
     :math:`T_{ab}` determines transformation of instrumental color index to standard
     color index.  :math:`T_a` corrects transformation from instrumental to standard
@@ -48,6 +61,10 @@ def create_simple_transform(A:np.ndarray, B:np.ndarray,
     :return: transform coefficients :py:class:`SimpleTransform`
     :rtype: SimpleTransform
     :raises Exception: if any of the regression slopes has zero standard error
+
+    See `Gary B.L., CCD Transformation Equations for Use with Single-Image Photometry
+    <https://researchers.usask.ca/gordon-sarty/documents/astronomy/transf.pdf>`__
+    for details.
     """
     AB = A - B
     ab = a - b
@@ -90,17 +107,33 @@ def apply_simple_transform(xfm:SimpleTransform,
 
     The standard magnitudes of the target star are calculated as follows:
 
-    :math:`C_t = A_t - B_t = (A_c - B_c) + T_{ab} ((a_t-b_t) - (a_c-b_c))`
+    .. math::
+        :label: apply.1
 
-    :math:`A_{t1} = a_t + (A_c-a_c) + T_a C_t`
+        C_t = A_t - B_t = (A_c - B_c) + T_{ab} ((a_t-b_t) - (a_c-b_c))
 
-    :math:`B_{t1} = A_t - C_t`
+    .. math::
+        :label: apply.2
+
+        A_{t1} = a_t + (A_c-a_c) + T_a C_t
+
+    .. math::
+        :label: apply.3
+
+        B_{t1} = A_t - C_t
 
     We can also calculate transformed magnitudes in the opposite order:
 
-    :math:`B_{t2} = b_t + (B_c-b_c) + T_b C_t`
+    .. math::
+        :label: apply.4
 
-    :math:`A_{t2} = B_{t2} + C_t`
+        B_{t2} = b_t + (B_c-b_c) + T_b C_t`
+
+
+    .. math::
+        :label: apply.5
+
+        A_{t2} = B_{t2} + C_t
 
     Because of chain nature of the equations, the magnitude which is calculated
     first has less uncertainty than the second one. This method returns
@@ -124,6 +157,10 @@ def apply_simple_transform(xfm:SimpleTransform,
     :return: Transformed standard magnitudes of the target star in bands A and B,
              in the order :math:`A_{t1}, B_{t2}, A_{t2}, B_{t1}`.
     :rtype: tuple[MagErr, MagErr, MagErr, MagErr]
+
+    See `Gary B.L., CCD Transformation Equations for Use with Single-Image Photometry
+    <https://researchers.usask.ca/gordon-sarty/documents/astronomy/transf.pdf>`__
+    for details.
     """
     def transform(T_a, T_ab, A_c, B_c, a_c, b_c, a_t, b_t):
         Ta, Ta_err = T_a

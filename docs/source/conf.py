@@ -46,6 +46,11 @@ extensions = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy', None),
     }
 
 autoclass_content = "both"  # This ensures both class and __init__ docstrings are included
+
+# Figure and math numbering
+numfig = True
+math_numfig = True

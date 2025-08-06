@@ -8,9 +8,11 @@ from astropy.table import QTable, Column
 from photutils.aperture import (ApertureStats,
                                 SkyCircularAperture,
                                 SkyCircularAnnulus)
+from vsopy.util import Aperture
 
 
-def measure_photometry(image, stars, aperture, extended=False):
+def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
+                       extended:bool=False) -> QTable:
     """Extract aperture photometry data from the image.
 
     Given the calibrated image and the list of star centroids in sky coordinates,
@@ -25,40 +27,57 @@ def measure_photometry(image, stars, aperture, extended=False):
     for annulus :math:`F_a` - sky electrons only. Number of sky electrons in the central
     aperture is
 
-    .. math:: F_{sky} = \\frac{F_{a}}{N_{ann}} N_c,
+    .. math::
+        :label: measure.1
+
+        F_{sky} = \\frac{F_{a}}{N_{ann}} N_c,
 
     where :math:`N_{ann}` and :math:`N_c` are pixel counts for the annulus
     and the central aperture respectively.
 
-    Then star flux in electons is
+    Then star flux in electrons is
 
-    .. math:: F_{star} = F_c - F_{sky}
+    .. math::
+        :label: apply.2
+
+        F_{star} = F_c - F_{sky}
 
     and signal to noise ratio is
 
-    .. math:: SNR = \\frac{F_{star}}{\\sqrt{F_{star} + 2 F_{sky}}}
+    .. math::
+        :label: apply.3
+
+        SNR = \\frac{F_{star}}{\\sqrt{F_{star} + 2 F_{sky}}}
 
     To convert flux to magnitude, an arbitrary scale value
     :math:`F_0 = 10^6 \\frac{e}{s}` is used:
 
-    .. math:: M = -2.5 log_{10}(F_{star} / F_0)
+    .. math::
+        :label: apply.4
 
-    Args:
-        - image (CCDData):            calibrated image, pixel counts in electrons.
-        - stars (table-like):         list of stars to be measured: AUID, centroid, optional name
-        - r (Quantity):               radius of the circular aperture
-        - r_ann (Quantity, Quantity): inner and outer radii of the annulus
-        - extended (bool):            return additional stats (FWHM, ellipticity etc)
+        M = -2.5 log_{10}(F_{star} / F_0)
 
-    Returns:
-        QTable: photometry results:
+    :param image:       calibrated image, pixel counts in electrons.
+    :type image:        :py:class:`~astropy.nddata.CCDData`
+    :param stars:       list of stars to be measured: AUID, centroid, optional name
+    :type stars:        :py:class:`~astropy.table.QTable`
+    :param aperture:    circular aperture and annulus radii in sky coordinates
+    :type aperture:     Aperture
+    :param extended:    whether to return additional stats (FWHM,
+                        ellipticity etc), default False
+    :type extended: bool
+    :return:           photometry results
+    :rtype:            :py:class:`~astropy.table.QTable`, fields:
+
                 - auid,
                 - centroid,
                 - flux (:math:`\\frac{e}{s}`)
                 - SNR (db)
                 - Magnitude with uncertainty,
                 - relative peak (max count / saturation level)
-
+                - ellipticity (if extended=True)
+                - FWHM (if extended=True)
+                - orientation (if extended=True)
     """
     result = QTable(stars['auid', 'radec2000'])
     if 'name' in stars.colnames:
