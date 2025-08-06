@@ -1,17 +1,22 @@
 import numpy as np
 from pathlib import Path
-from astropy.table import QTable
+from astropy.io.typing import PathLike
+from astropy.table import QTable, Row
+from collections.abc import Callable
+from typing import Any
 
 class PersistentTable:
     """ A wrapper around QTable serialized to disk.
     """
-    def __init__(self, path, initializer=QTable) ->None:
-        """ Create the wrapper.
+    def __init__(self, path:PathLike, initializer:Callable[[],None]=QTable) -> None:
+        """Create the wrapper
 
-            Parameters:
-            path: path-like, pointing to the serialized table representation.
-            initializer: a function called with no arguments providing QTable object
-                         if no serialized table exists
+        :param path: path to file with the table data.
+        :type path: PathLike
+        :param initializer: callable with no arguments returning
+                            :py:class:`~astropy.table.QTable`,
+                            defaults to QTable constructor
+        :type initializer: callable, optional
         """
         self.path_ = Path(path)
         self.table_ = None
@@ -24,10 +29,10 @@ class PersistentTable:
         self.table_.write(self.path_, format=self.format_, overwrite=True)
 
     def get(self) -> QTable:
-        """ Get underlying table object
+        """Get underlying table object
 
-            Result:
-            table:  QTable either read from disk or provided by initializer.
+        :return: Table read from disk or initialized by the initializer.
+        :rtype: :py:class:`~astropy.table.QTable`
         """
         if not self.table_:
             if self.path_.exists():
@@ -38,62 +43,58 @@ class PersistentTable:
         return self.table_
 
     @staticmethod
-    def init_from_template(template):
-        """ Convenience method to create empty table with required structure.
+    def init_from_template(template:QTable) -> QTable:
+        """Convenience method to create an empty table from template
 
-            Parameters:
-            template: QTable providing structure
-
-            returns
-            result:  Empty QTable with the same set of columns as template,
-                     both names and data types
+        :param template: template table to be used for initialization.
+        :type template: :py:class:`~astropy.table.QTable`
+        :return: Empty table replicating the structure of the template.
+        :rtype: :py:class:`~astropy.table.QTable`
         """
         return QTable(template)[[]]
 
-    def append(self, row):
-        """ Append a row to the table and flush.
+    def append(self, row:Any):
+        """Append a row to the table and flush
 
-            Parameters:
-            row: dictionary-like, data row to be added.
-
-            Returns:
-            table: updated QTable
+        :param row: data row to be added
+        :type row: dictionary-like which is acceptable by
+                   :py:meth:`~astropy.table.QTable.add_row`
+        :return: updated table
+        :rtype: :py:class:`~astropy.table.QTable`
         """
         self.get().add_row(row)
         self.flush()
         return self.table_
 
-    def row_by_key(self, field, key):
-        """ Get row by the value of the field.
+    def row_by_key(self, field:str, key:Any) -> Row | None:
+        """Select row by the value of the field
 
-            Parameters:
-            field: the name of the table column.
-            key: the value, type must match the data type of the column
-
-            Returns:
-            row:  None of table does not have table[field]==key;
-                  row if key matches exactly one value in 'field'
-
-            Raises:
-                KeyError if 'key' matches multiple rows.
+        :param field: the name of the table column
+        :type field: str
+        :param key: the value, type must match the data type of the column
+        :type key: Any
+        :return: table row if table[field]==key;
+                 None if key does not match any value in 'field';
+        :rtype: Row | None
+        :raises: KeyError if 'key' matches multiple rows.
         """
         rows = self.table_[self.table_[field] == key]
-        return None if len(rows) == 0 else rows[0] if len(rows) == 1 else KeyError(f"{len(rows)} rows found for {field}={key}")
+        if len(rows) > 1:
+            raise KeyError(f"{len(rows)} rows found for {field}={key}")
+        return None if len(rows) == 0 else rows[0]
 
-    def row_by_keys(self, keys):
-        """ Get row by the value of the field.
+    def row_by_keys(self, keys:dict[str, Any]) -> Row | None:
+        """Select row matching values of multiple fields
 
-            Parameters:
-            field: the name of the table column.
-            key: the value, type must match the data type of the column
-
-            Returns:
-            row:  None of table does not have table[field]==key;
-                  row if key matches exactly one value in 'field'
-
-            Raises:
-                KeyError if 'key' matches multiple rows.
+        :param keys: dictionary with field names as keys and values to match
+        :type keys: dict[str, Any]
+        :return: table row matching all key-value pairs;
+                 None if there is no match;
+        :rtype: Row | None
+        :raises: KeyError if multiple rows match the criteria.
         """
         filter = np.all([self.get()[field] == val for field, val in keys.items()], axis=0)
         rows = self.get()[filter]
-        return None if len(rows) == 0 else rows[0] if len(rows) == 1 else KeyError(f"{len(rows)} rows found for {field}={key}")
+        if len(rows) > 1:
+            raise KeyError(f"{len(rows)} rows found for {keys}")
+        return None if len(rows) == 0 else rows[0]

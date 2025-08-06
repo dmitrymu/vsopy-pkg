@@ -4,10 +4,6 @@ from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 from unittest.mock import patch
 from vsopy.data import StarData, PersistentTable, AavsoApi, AavsoParser
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../../src')))
 
 
 
@@ -54,7 +50,7 @@ class StarDataTest(unittest.TestCase):
         self.assertEqual(set(fields.colnames), set(['name', 'fov', 'radec2000', 'count']))
         self.assertTrue(sd.is_std_field('SA00'))
 
-    @patch(f"vso.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.PersistentTable.QTable.write")
     @patch.object(AavsoApi, 'get_star_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_star_chart(self, parse_std_fields, mock_get_star_chart, mock_write):
@@ -64,7 +60,7 @@ class StarDataTest(unittest.TestCase):
         chart = sd.get_chart('A Star', 60*u.arcmin, 15*u.mag)
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vso.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.PersistentTable.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_star_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
@@ -74,7 +70,7 @@ class StarDataTest(unittest.TestCase):
         chart = sd.get_chart('SA00')
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vso.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.PersistentTable.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_norm_star_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):

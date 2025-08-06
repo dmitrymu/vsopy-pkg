@@ -1,16 +1,17 @@
-import astropy.units as u
+import astropy.units as u # type: ignore
 import numpy as np
 from .. import reduce
 from ..data import CameraRegistry
-from astropy.nddata import CCDData
-from astropy.stats import sigma_clipped_stats
-from astropy.table import QTable, Column
-from photutils.aperture import (ApertureStats,
+from astropy.nddata import CCDData # type: ignore
+from astropy.table import QTable, Column # type: ignore
+from photutils.aperture import (ApertureStats, # type: ignore
                                 SkyCircularAperture,
                                 SkyCircularAnnulus)
+from vsopy.util import Aperture
 
 
-def measure_photometry(image, stars, aperture, extended=False):
+def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
+                       extended:bool=False) -> QTable:
     """Extract aperture photometry data from the image.
 
     Given the calibrated image and the list of star centroids in sky coordinates,
@@ -21,40 +22,61 @@ def measure_photometry(image, stars, aperture, extended=False):
     (https://photutils.readthedocs.io). Uncertainty fromthe image is propagated to
     the flux values. Flux is normalized by the image exposure to electrons per second.
 
-    The flux for central aperture F_c contains both star and sky electrons, the flux
-    for annulus F_a - sky electrons only. Number of sky electrons in the central
+    The flux for central aperture :math:`F_c` contains both star and sky electrons, the flux
+    for annulus :math:`F_a` - sky electrons only. Number of sky electrons in the central
     aperture is
 
-    F_{sky} = F_{sky mean} * (pixel count for central aperture)
+    .. math::
+        :label: measure.1
 
-    Then star flux in electons is
+        F_{sky} = \\frac{F_{a}}{N_{ann}} N_c,
 
-    F_{star} = F_c - F_{sky}
+    where :math:`N_{ann}` and :math:`N_c` are pixel counts for the annulus
+    and the central aperture respectively.
+
+    Then star flux in electrons is
+
+    .. math::
+        :label: measure.2
+
+        F_{star} = F_c - F_{sky}
 
     and signal to noise ratio is
 
-    SNR = F_{star} / \\sqrt{F_star + 2 * F_sky}
+    .. math::
+        :label: measure.3
 
-    To convert flux to magnitude, an arbitrary scale value F_0 = 1e6 e/s is used:
+        SNR = \\frac{F_{star}}{\\sqrt{F_{star} + 2 F_{sky}}}
 
-    M = -2.5 * log_{10}(F_{star} / F_0)
+    To convert flux to magnitude, an arbitrary scale value
+    :math:`F_0 = 10^6 \\frac{e}{s}` is used:
 
-    Args:
-        image (CCDData):            calibrated image, pixel counts in electrons.
-        stars (table-like):         list of stars to be measured: AUID, centroid, optional name
-        r (Quantity):               radius of the circular aperture
-        r_ann (Quantity, Quantity): inner and outer radii of the annulus
-        extended (bool):            return additional stats (FWHM, ellipticity etc)
+    .. math::
+        :label: measure.4
 
-    Returns:
-        QTable: photometry results:
-                auid,
-                centroid,
-                flux (e/s)
-                SNR (db)
-                Magnitude with uncertainty,
-                relative peak (max count / saturation level)
+        M = -2.5 log_{10}(F_{star} / F_0)
 
+    :param image:       calibrated image, pixel counts in electrons.
+    :type image:        :py:class:`~astropy.nddata.CCDData`
+    :param stars:       list of stars to be measured: AUID, centroid, optional name
+    :type stars:        :py:class:`~astropy.table.QTable`
+    :param aperture:    circular aperture and annulus radii in sky coordinates
+    :type aperture:     Aperture
+    :param extended:    whether to return additional stats (FWHM,
+                        ellipticity etc), default False
+    :type extended: bool
+    :return:           photometry results
+    :rtype:            :py:class:`~astropy.table.QTable`, fields:
+
+                - auid,
+                - centroid,
+                - flux (:math:`\\frac{e}{s}`)
+                - SNR (db)
+                - Magnitude with uncertainty,
+                - relative peak (max count / saturation level)
+                - ellipticity (if extended=True)
+                - FWHM (if extended=True)
+                - orientation (if extended=True)
     """
     result = QTable(stars['auid', 'radec2000'])
     if 'name' in stars.colnames:

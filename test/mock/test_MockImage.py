@@ -1,11 +1,7 @@
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src')))
-
-import unittest
 
 import astropy.units as u
 import numpy as np
+import unittest
 from vsopy.mock import MockImageBuilder, MockStar
 
 class MockImageBuilderTest(unittest.TestCase):
