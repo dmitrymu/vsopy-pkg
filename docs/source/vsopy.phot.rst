@@ -10,7 +10,7 @@ vsopy.phot.BatchDataProvider module
 .. automodule:: vsopy.phot.BatchDataProvider
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.phot.classic\_transform module
 ------------------------------------
@@ -18,7 +18,7 @@ vsopy.phot.classic\_transform module
 .. automodule:: vsopy.phot.classic_transform
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.phot.measure module
 -------------------------
@@ -26,7 +26,7 @@ vsopy.phot.measure module
 .. automodule:: vsopy.phot.measure
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.phot.transform module
 ---------------------------
@@ -34,7 +34,7 @@ vsopy.phot.transform module
 .. automodule:: vsopy.phot.transform
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 Module contents
 ---------------
@@ -42,4 +42,4 @@ Module contents
 .. automodule:: vsopy.phot
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:

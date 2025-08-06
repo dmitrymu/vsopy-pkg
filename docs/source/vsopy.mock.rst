@@ -10,7 +10,7 @@ vsopy.mock.MockImage module
 .. automodule:: vsopy.mock.MockImage
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 Module contents
 ---------------
@@ -18,4 +18,4 @@ Module contents
 .. automodule:: vsopy.mock
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:

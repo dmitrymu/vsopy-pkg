@@ -19,4 +19,4 @@ Module contents
 .. automodule:: vsopy
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:

@@ -10,7 +10,7 @@ vsopy.reduce.CalibrationMatcher module
 .. automodule:: vsopy.reduce.CalibrationMatcher
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.reduce.MasterBuilder module
 ---------------------------------
@@ -18,7 +18,7 @@ vsopy.reduce.MasterBuilder module
 .. automodule:: vsopy.reduce.MasterBuilder
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.reduce.calibrate module
 -----------------------------
@@ -26,7 +26,7 @@ vsopy.reduce.calibrate module
 .. automodule:: vsopy.reduce.calibrate
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 vsopy.reduce.solve module
 -------------------------
@@ -34,7 +34,7 @@ vsopy.reduce.solve module
 .. automodule:: vsopy.reduce.solve
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
 
 Module contents
 ---------------
@@ -42,4 +42,4 @@ Module contents
 .. automodule:: vsopy.reduce
    :members:
    :show-inheritance:
-   :undoc-members:
+   :no-undoc-members:
