@@ -66,26 +66,64 @@ def create_simple_transform(A:np.ndarray, B:np.ndarray,
         ValErr(1/reg_ab.slope, reg_ab.stderr))
     return result
 
-def apply_simple_transform(xfm, A_c, B_c, a_c, b_c, a_t, b_t):
-    """Calculate standard magnitude of the target using its instrumental magnitude, comparison star, and transform.
+def apply_simple_transform(xfm:SimpleTransform,
+                           A_c:MagErr, B_c:MagErr,
+                           a_c:MagErr, b_c:MagErr,
+                           a_t:MagErr, b_t:MagErr) -> tuple[MagErr, MagErr, MagErr, MagErr]:
+    """Simple differential photometry
 
-    For color bands A and B defined on transform creation, the following magnitudes are known:
-    * a_t and b_t - instrumental for target star;
-    * a_c and b_c - instrumental for comparison star;
-    * A_c and B_c - standard for comparison star.
+    Differential photometry is a method of measuring the magnitude of a
+    target star with respect to a comparison star, for which instrumental
+    magnitude is known. The simple method assumes that the we have a couple of
+    images in different spectral bands, and each image contains several stars
+    with known standard magnitudes. We select one star as a comparison star,
+    another as a check star, and the rest for calculating the transform
+    using the method described in :py:func:`create_simple_transform`.
 
-    Standard magnitudes of the target A_t and B_t are calculated as follows:
+    Let we have images in bands A and B, and the following magnitudes are known:
 
-    (1) C_t = A_t - B_t = (A_c - B_c) + T_ab * ((a_t-b_t) - (a_c-b_c))
-    (2) A_t = a_t + (A_c-a_c) + T_b * (C_t - (A_c - B_c))
-    (3) B_t = A_t - C_t
+    * :math:`A_c` and :math:`B_c` - standard magnitudes of the comparison star;
+    * :math:`a_c` and :math:`b_c` - instrumental magnitudes of the comparison star;
+    * :math:`a_t` and :math:`b_t` - instrumental magnitudes of the target star.
 
-    All magnitudes and transform coefficients have their uncertainties that should
-    be propagated through the equations above.
+    Let the transform coefficients are :math:`T_a`, :math:`T_b`, and :math:`T_{ab}`.
 
-    Args:
-        target (dict-like): target star (instrumental)
-        comp (dict_like): comparison star (instrumental and standard)
+    The standard magnitudes of the target star are calculated as follows:
+
+    :math:`C_t = A_t - B_t = (A_c - B_c) + T_{ab} ((a_t-b_t) - (a_c-b_c))`
+
+    :math:`A_{t1} = a_t + (A_c-a_c) + T_a C_t`
+
+    :math:`B_{t1} = A_t - C_t`
+
+    We can also calculate transformed magnitudes in the opposite order:
+
+    :math:`B_{t2} = b_t + (B_c-b_c) + T_b C_t`
+
+    :math:`A_{t2} = B_{t2} + C_t`
+
+    Because of chain nature of the equations, the magnitude which is calculated
+    first has less uncertainty than the second one. This method returns
+    all four target magnitudes, in the order
+    :math:`A_{t1}, B_{t2}, A_{t2}, B_{t1}`.
+
+    :param xfm: Transform coefficients
+    :type xfm: SimpleTransform
+    :param A_c: Standard magnitude of the comparison star in band A
+    :type A_c: MagErr
+    :param B_c: Standard magnitude of the comparison star in band B
+    :type B_c: MagErr
+    :param a_c: Instrumental magnitude of the comparison star in band A
+    :type a_c: MagErr
+    :param b_c: Instrumental magnitude of the comparison star in band B
+    :type b_c: MagErr
+    :param a_t: Instrumental magnitude of the target star in band A
+    :type a_t: MagErr
+    :param b_t: Instrumental magnitude of the target star in band B
+    :type b_t: MagErr
+    :return: Transformed standard magnitudes of the target star in bands A and B,
+             in the order :math:`A_{t1}, B_{t2}, A_{t2}, B_{t1}`.
+    :rtype: tuple[MagErr, MagErr, MagErr, MagErr]
     """
     def transform(T_a, T_ab, A_c, B_c, a_c, b_c, a_t, b_t):
         Ta, Ta_err = T_a
