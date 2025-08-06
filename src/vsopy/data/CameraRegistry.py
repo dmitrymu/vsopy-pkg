@@ -1,6 +1,6 @@
-import astropy.units as u
+import astropy.units as u # type: ignore
 import numpy as np
-from astropy.units import Quantity
+from astropy.units import Quantity # type: ignore
 from collections.abc import Callable
 
 
@@ -15,14 +15,16 @@ def UNITY_XFM(g, full_well, adc_bits): return 1.0*u.electron/u.adu
 def ASI_XFM(g, full_well, adc_bits): return ccd_gain(
     g * u.db / 10, full_well, adc_bits)
 
+GainXfmType = Callable[[float, Quantity[u.electron], int], Quantity[u.electron]]
+NoiseInterpolatorType = tuple[list[float], list[Quantity[u.electron]]]
 
 class Camera:
     """Camera class representing a CCD camera with specific characteristics.
     """
 
     def __init__(self, full_well: Quantity, adc_bits: int,
-                 xfm: Callable[[float, Quantity, int], Quantity] = UNITY_XFM,
-                 read_noise: tuple[list[float], list[Quantity]] = None):
+                 xfm: GainXfmType = UNITY_XFM,
+                 read_noise: NoiseInterpolatorType | None = None):
         """Create a Camera instance.
 
         :param full_well: Full well capacity in electrons
@@ -39,7 +41,7 @@ class Camera:
         self.xfm_ = xfm
         self.read_noise_ = read_noise
 
-    def gain_to_e(self, score: float) -> Quantity:
+    def gain_to_e(self, score: float) -> Quantity[u.electron]:
         """ Convert gain score to electrons.
 
         :param score: Gain score in camera units
@@ -49,7 +51,7 @@ class Camera:
         """
         return self.xfm_(score, self.full_well_, self.adc_bits_)
 
-    def read_noise(self, score: float) -> Quantity:
+    def read_noise(self, score: float) -> Quantity[u.electron]:
         """Camera read noise in electrons for a given gain score.
 
         :param score: Gain score in camera units
@@ -70,7 +72,7 @@ class Camera:
         return 1 << (16 - self.adc_bits_)
 
     @property
-    def max_adu(self) -> int:
+    def max_adu(self) -> Quantity[u.adu]:
         """Maximum ADU value for the camera.
 
         :return: :math:`2^{N}`, where :math:`N` is the number of bits in the ADC.
@@ -97,7 +99,7 @@ class CameraRegistry:
         pass
 
     @staticmethod
-    def get(name) -> Camera:
+    def get(name:str) -> Camera | None:
         """Get a camera by its name from the registry.
 
         :param name: Name of the camera to retrieve

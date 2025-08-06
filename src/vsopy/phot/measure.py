@@ -1,11 +1,10 @@
-import astropy.units as u
+import astropy.units as u # type: ignore
 import numpy as np
 from .. import reduce
 from ..data import CameraRegistry
-from astropy.nddata import CCDData
-from astropy.stats import sigma_clipped_stats
-from astropy.table import QTable, Column
-from photutils.aperture import (ApertureStats,
+from astropy.nddata import CCDData # type: ignore
+from astropy.table import QTable, Column # type: ignore
+from photutils.aperture import (ApertureStats, # type: ignore
                                 SkyCircularAperture,
                                 SkyCircularAnnulus)
 from vsopy.util import Aperture

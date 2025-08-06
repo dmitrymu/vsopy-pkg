@@ -1,9 +1,8 @@
-import astropy.units as u
+import astropy.units as u # type: ignore
 import numpy as np
 
 from ..util import MagErr, ValErr, MagErrDtype, ValErrDtype
-from astropy.table import QTable, Column, join
-from collections import namedtuple
+from astropy.table import QTable, Column, join # type: ignore
 from scipy import stats as sst
 from typing import NamedTuple
 

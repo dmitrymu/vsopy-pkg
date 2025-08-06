@@ -1,3 +1,4 @@
+import astropy.units as u # type: ignore
 from typing import NamedTuple
 
 class ValErr(NamedTuple):
@@ -11,9 +12,9 @@ ValErrDtype = [('val', 'f4'), ('err', 'f4')]
 
 class MagErr(NamedTuple):
     """Magnitude with uncertainty."""
-    mag: float
+    mag: u.Quantity[u.mag]
     """Magnitude of the measurement."""
-    err: float
+    err: u.Quantity[u.mag]
     """Uncertainty of the magnitude measurement."""
 
 MagErrDtype = [('mag', 'f4'), ('err', 'f4')]
