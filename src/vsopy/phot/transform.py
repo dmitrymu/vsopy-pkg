@@ -1,37 +1,53 @@
 import astropy.units as u
 import numpy as np
 
-from .. import phot
 from ..util import MagErr, ValErr, MagErrDtype, ValErrDtype
 from astropy.table import QTable, Column, join
 from collections import namedtuple
 from scipy import stats as sst
+from typing import NamedTuple
 
-SimpleTransform = namedtuple('SimpleTransform', ['Ta', 'Tb', 'Tab'])
+class SimpleTransform(NamedTuple):
+    """Simple linear transformation coefficients for two bands.
+    """
+    Ta: ValErr
+    """Transformation coefficient for band A"""
+    Tb: ValErr
+    """Transformation coefficient for band B"""
+    Tab: ValErr
+    """Transformation coefficient for color index (A-B)"""
 
-def create_simple_transform(A, B, a, b):
+def create_simple_transform(A:np.ndarray, B:np.ndarray,
+                            a:np.ndarray, b:np.ndarray) -> SimpleTransform:
     """Create transform from star photometry for two images
 
-    Given an ensemble of stars with both standard (A, B) and instrumental
-    (a,b) magnitudes known for two bands, we fit two linear regressions:
+    Given an ensemble of stars with both standard (:math:`A`, :math:`B`) and instrumental
+    (:math:`a`, :math:`b`) magnitudes known for two bands, we fit two linear regressions:
 
-    (1)  a - b = T_ab * (A - B) + C_ab
-    (2)  A-a = T_a * (A - B) + C_a
-    (3)  B-b = T_b * (A - B) + C_b
+    .. math:: a - b = T_{ab} (A - B) + Z_{ab}
+    .. math:: A - a = T_a (A - B) + Z_a
+    .. math:: B - b = T_b (A - B) + Z_b
 
-    T_ab determines transformation of instrumental color index to standard
-    color index.  T_a corrects transformation from instrumental to standard
-    magnitude with respect to color index. See comment on
-    SimpleTransform.__call__ for details.
+    :math:`T_{ab}` determines transformation of instrumental color index to standard
+    color index.  :math:`T_a` corrects transformation from instrumental to standard
+    magnitude with respect to color index. See :py:func:`apply_simple_transform`
+    for details.
+    :math:`T_b` is similar to :math:`T_a` but for band B.
 
-    Args:
-        batch (table-like): instrumental and standard magnitudes for image pair
-        band_a (str): band (filter) of the first image
-        band_b (str): band (filter) of the second image
+    The regression coefficients are calculated using :py:func:`scipy.stats.linregress`.
 
-    Returns:
-        SimpleTransform: transform to calculate target standard magnitude
-        given comparison star.
+    :param A: standard magnitudes in band A
+    :param B: standard magnitudes in band B
+    :param a: instrumental magnitudes in band A
+    :param b: instrumental magnitudes in band B
+    :type A: :py:class:`~numpy.ndarray`
+    :type B: :py:class:`~numpy.ndarray`
+    :type a: :py:class:`~numpy.ndarray`
+    :type b: :py:class:`~numpy.ndarray`
+
+    :return: transform coefficients :py:class:`SimpleTransform`
+    :rtype: SimpleTransform
+    :raises Exception: if any of the regression slopes has zero standard error
     """
     AB = A - B
     ab = a - b
