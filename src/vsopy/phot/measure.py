@@ -37,14 +37,14 @@ def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
     Then star flux in electrons is
 
     .. math::
-        :label: apply.2
+        :label: measure.2
 
         F_{star} = F_c - F_{sky}
 
     and signal to noise ratio is
 
     .. math::
-        :label: apply.3
+        :label: measure.3
 
         SNR = \\frac{F_{star}}{\\sqrt{F_{star} + 2 F_{sky}}}
 
@@ -52,7 +52,7 @@ def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
     :math:`F_0 = 10^6 \\frac{e}{s}` is used:
 
     .. math::
-        :label: apply.4
+        :label: measure.4
 
         M = -2.5 log_{10}(F_{star} / F_0)
 
