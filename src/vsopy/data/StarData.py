@@ -2,6 +2,7 @@ from . import AavsoApi
 from . import AavsoParser
 from . import PersistentTable
 import astropy.units as u
+from astropy.coordinates import SkyCoord
 from astropy.table import QTable
 from pathlib import Path
 
@@ -48,6 +49,17 @@ class StarData:
                 id=['']
             ))
         )
+        self.targets_ = PersistentTable(
+            self.charts_dir_ / 'targets.ecsv',
+            lambda: PersistentTable.init_from_template(dict(
+                auid=[''],
+                name=[''],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[0]*u.deg),
+                varType=[''],
+                maxMag=[0.0]*u.mag,
+                minMag=[0.0]*u.mag,
+            ))
+        )
         self.charts_cache_ = {}
 
     @property
@@ -68,6 +80,12 @@ class StarData:
             FOV, and star count
         """
         return self.std_fields_.get()
+
+    @property
+    def targets(self):
+        """ The table containing all downloaded targets.
+        """
+        return self.targets_.get()
 
     def get_chart_path(self, id):
         """ Construct the path to serialized photometry data
@@ -173,5 +191,19 @@ class StarData:
             return (pt[0].get(), pt[1].get()) if self.normalize_ else pt.get()
         else:
             return self.load_chart(cached['id'])
+
+    def get_target(self, name):
+        """ Get target description from AAVSO VSX
+        """
+        cached = self.targets_.row_by_key('name', name)
+        if not cached:
+            text = self.api_.get_vsx_votable(name)
+            t = self.parser_.parse_vsx_votable(text)
+            target = t['auid', 'name', 'radec2000',
+                                                          'varType', 'maxMag', 'minMag'][0]
+            self.targets_.append(target)
+            return target
+        else:
+            return cached
 
 

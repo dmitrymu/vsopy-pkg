@@ -22,6 +22,15 @@ CHARTS_TEMPLATE = dict(
     id=['']
 )
 
+TARGETS_TEMPLATE = dict(
+                auid=[''],
+                name=[''],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[0]*u.deg),
+                varType=[''],
+                maxMag=[0.0]*u.mag,
+                minMag=[0.0]*u.mag,
+            )
+
 STAR_CHART = """
 {"chartid":"X37313LN",
  "photometry":[
@@ -33,12 +42,22 @@ STAR_CHART = """
 }
 """
 
+TARGETS_TABLE = QTable(dict(
+                auid=['000-AAA-000'],
+                name=['Polaris'],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[90]*u.deg),
+                varType=['VVVV'],
+                maxMag=[0.0]*u.mag,
+                minMag=[10.0]*u.mag,
+            ))
+
 class StarDataTest(unittest.TestCase):
 
     @patch.object(PersistentTable, "get")
     def test_construct_from_initializer(self, mock_get):
         mock_get.side_effect = [PersistentTable.init_from_template(CHARTS_TEMPLATE),
-                                STD_FIELDS, STD_FIELDS
+                                STD_FIELDS, STD_FIELDS,
+                                PersistentTable.init_from_template(TARGETS_TEMPLATE)
                                 ]
         sd = StarData('/home/test')
         charts = sd.charts
@@ -49,6 +68,9 @@ class StarDataTest(unittest.TestCase):
         self.assertEqual(len(fields), 1)
         self.assertEqual(set(fields.colnames), set(['name', 'fov', 'radec2000', 'count']))
         self.assertTrue(sd.is_std_field('SA00'))
+        targets = sd.targets
+        self.assertEqual(len(targets), 0)
+        self.assertEqual(set(targets.colnames), set(['auid', 'name', 'radec2000', 'varType', 'maxMag', 'minMag']))
 
     @patch(f"vsopy.data.PersistentTable.QTable.write")
     @patch.object(AavsoApi, 'get_star_chart')
@@ -80,3 +102,13 @@ class StarDataTest(unittest.TestCase):
         centroids, sequence = sd.get_chart('SA00')
         self.assertEqual(len(centroids), 1)
         self.assertEqual(len(sequence), 4)
+
+    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch.object(AavsoApi, 'get_vsx_votable')
+    @patch.object(AavsoParser, 'parse_vsx_votable')
+    def test_get_target(self, parse_vsx_votable, get_vsx_votable, mock_write):
+        get_vsx_votable.return_value = '<dummy/>'
+        parse_vsx_votable.return_value = TARGETS_TABLE
+        sd = StarData('/home/test')
+        target = sd.get_target('Polaris')
+        self.assertEqual(len(target), 6)
