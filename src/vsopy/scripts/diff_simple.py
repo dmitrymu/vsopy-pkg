@@ -68,7 +68,7 @@ def main():
         result.setdefault(band[1], []).append(BandResult(err=b_err, data=ab))
 
     with open(session_layout.root_dir / 'report-simple.txt', mode='w') as f:
-      report = data.AavsoReport(f,
+      report = data.aavso_report(f,
                                 provider.target_name,
                                 provider.chart_id,
                                 args.observer)

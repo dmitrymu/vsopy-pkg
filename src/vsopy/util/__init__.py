@@ -1,8 +1,8 @@
 from .bands import ordered_bands, band_pairs
-from .Blacklist import Blacklist
+from .blacklist import Blacklist
 from .format import default_table_format
-from .FrameType import FrameType
-from .Layout import *
+from .frame_type import FrameType
+from .layout import *
 from .SessionImages import *
 from .Settings import Settings, Aperture
 from .types import *

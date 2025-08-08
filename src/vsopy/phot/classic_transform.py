@@ -88,7 +88,7 @@ def build_classic_regression_input(session_layout, bands):
         m[f'instr d{bands[1]}'] = build_diff_column(m, b11, b12)
         return m['batch_id', 'auid_1', 'auid_2', f'instr d{bands[0]}', f'instr d{bands[1]}']
 
-    provider = phot.BatchDataProvider(session_layout)
+    provider = phot.batch_data_provider(session_layout)
 
     sequence = provider.sequence_band_pair(bands)
     sequence['C'] = build_diff_column(sequence, bands[0], bands[1]) #Column(sequence[bands[0]]['mag'] - sequence[bands[1]]['mag'])

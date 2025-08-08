@@ -39,7 +39,7 @@ def make_context(args):
     work_layout = util.WorkLayout(args.work_dir)
     session_layout = work_layout.get_session(session)
     solver = lambda path: reduce.astap_solver(path, session_layout.solved_dir)
-    matcher = reduce.CalibrationMatcher(work_layout.calibr_dir)
+    matcher = reduce.calibration_matcher(work_layout.calibr_dir)
     settings = util.Settings(session_layout.settings_file_path)
     global CONTEXT
     CONTEXT = (matcher, solver, settings.aperture)
@@ -131,7 +131,7 @@ def main():
 
     images = QTable.read(session_layout.images_file_path)
 
-    blacklist = util.Blacklist(session_layout.blacklist_file_path)
+    blacklist = util.blacklist(session_layout.blacklist_file_path)
 
     with cf.ProcessPoolExecutor(initializer=make_context,
                                 initargs=(args,),

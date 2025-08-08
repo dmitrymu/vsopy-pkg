@@ -72,7 +72,7 @@ class StarDataTest(unittest.TestCase):
         self.assertEqual(len(targets), 0)
         self.assertEqual(set(targets.colnames), set(['auid', 'name', 'radec2000', 'varType', 'maxMag', 'minMag']))
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_star_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_star_chart(self, parse_std_fields, mock_get_star_chart, mock_write):
@@ -82,7 +82,7 @@ class StarDataTest(unittest.TestCase):
         chart = sd.get_chart('A Star', 60*u.arcmin, 15*u.mag)
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_std_field_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
@@ -92,7 +92,7 @@ class StarDataTest(unittest.TestCase):
         chart = sd.get_chart('SA00')
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_norm_star_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
@@ -103,7 +103,7 @@ class StarDataTest(unittest.TestCase):
         self.assertEqual(len(centroids), 1)
         self.assertEqual(len(sequence), 4)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_vsx_votable')
     @patch.object(AavsoParser, 'parse_vsx_votable')
     def test_get_target(self, parse_vsx_votable, get_vsx_votable, mock_write):

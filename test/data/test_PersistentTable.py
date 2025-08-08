@@ -14,8 +14,8 @@ def mock_qtable_write(self, path, **kwargs):
 
 class PersistentTableTest(unittest.TestCase):
 
-    @patch(f"vsopy.data.PersistentTable.Path.exists")
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.Path.exists")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_construct_from_initializer(self, mock_write, mock_exists):
         mock_exists.return_value = False
         t = PersistentTable(TABLE_PATH)
@@ -26,9 +26,9 @@ class PersistentTableTest(unittest.TestCase):
         mock_exists.assert_called_once()
         mock_write.assert_called_once_with(t.path_, format='ascii.ecsv', overwrite=True)
 
-    @patch(f"vsopy.data.PersistentTable.Path.exists")
-    @patch(f"vsopy.data.PersistentTable.QTable.read")
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.Path.exists")
+    @patch(f"vsopy.data.persistent_table.QTable.read")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_construct_from_persistent(self, mock_write, mock_read, mock_exists):
         mock_exists.return_value = True
         t = PersistentTable(TABLE_PATH)
@@ -44,9 +44,9 @@ class PersistentTableTest(unittest.TestCase):
         mock_read.assert_called_once_with(t.path_, format='ascii.ecsv')
         mock_write.assert_not_called()
 
-    @patch(f"vsopy.data.PersistentTable.Path.exists")
-    @patch(f"vsopy.data.PersistentTable.QTable.read")
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.Path.exists")
+    @patch(f"vsopy.data.persistent_table.QTable.read")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_get(self, mock_write, mock_read, mock_exists):
         mock_exists.return_value = True
         t = PersistentTable(TABLE_PATH)
@@ -79,7 +79,7 @@ class PersistentTableTest(unittest.TestCase):
         self.assertEqual(table['b'].dtype, np.dtype(int))
         self.assertEqual(table['c'].dtype, np.dtype(float))
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_append_empty(self, mock_write):
         row = dict(
             a=np.array(['']),
@@ -98,7 +98,7 @@ class PersistentTableTest(unittest.TestCase):
         self.assertEqual(dict(t[0]), row)
 
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_append(self, mock_write):
         row = dict(
             a=np.array(['']),
@@ -116,7 +116,7 @@ class PersistentTableTest(unittest.TestCase):
         self.assertEqual(len(t), 1)
         self.assertEqual(dict(t[0]), row)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_row_by_key(self, _):
         template = dict(
             name=[''],
@@ -159,7 +159,7 @@ class PersistentTableTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             table.row_by_key('id', 3)  # multiple rows with id=3
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_row_by_keys(self, _):
         template = dict(
             name=[''],
