@@ -145,6 +145,7 @@ class PersistentTableTest(unittest.TestCase):
         )
         table = PersistentTable(TABLE_PATH,
                                 initializer=lambda: PersistentTable.init_from_template(template))
+        self.assertIsNone(table.row_by_key('name', 'a'))
         t = table.get()
         self.assertEqual(len(t), 0)
         t = table.append(row1)

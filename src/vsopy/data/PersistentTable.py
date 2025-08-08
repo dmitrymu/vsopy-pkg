@@ -78,7 +78,7 @@ class PersistentTable:
         :rtype: Row | None
         :raises: KeyError if 'key' matches multiple rows.
         """
-        rows = self.table_[self.table_[field] == key]
+        rows = self.get()[self.table_[field] == key]
         if len(rows) > 1:
             raise KeyError(f"{len(rows)} rows found for {field}={key}")
         return None if len(rows) == 0 else rows[0]
