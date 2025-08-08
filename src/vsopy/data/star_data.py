@@ -1,10 +1,17 @@
+import astropy.units as u
+import numpy as np
 from vsopy.data import AavsoApi, AavsoParser, PersistentTable
 from os import PathLike
 from typing import Mapping, Any
-import astropy.units as u
 from astropy.coordinates import SkyCoord
-from astropy.table import QTable
+from astropy.table import QTable, unique, vstack
+from itertools import dropwhile
 from pathlib import Path
+
+def preferred_fov(fov: u.Quantity[u.arcmin]) -> u.Quantity[u.arcmin]:
+    preferred = [10, 20, 30, 60, 120, 180] * u.arcmin
+    tail = list(dropwhile(lambda x,: x < fov / np.sqrt(2), preferred))
+    return tail[0] if len(tail) > 0 else preferred[-1]
 
 
 class StarData:
@@ -210,4 +217,27 @@ class StarData:
         else:
             return cached
 
+    def collect_stars(self, object_name:str,
+                  fov:u.Quantity[u.arcmin],
+                  maglimit:u.Quantity[u.mag]=16.0*u.mag) -> tuple[QTable, QTable]:
+        """ Collect all rrelevant stars fora goven object name
 
+            For standard fields, it collects all stars the field and all
+            its subfields.
+
+            For variable stars, it collects all stars in the chart and the
+            centroid of the target star itself.
+        """
+        centroids, sequence = None, None
+        if self.is_std_field(object_name):
+            objects = [name for name in self.std_fields['name']
+                            if name == object_name or name.startswith(f"{object_name} ")]
+            charts = [self.get_chart(name, fov=preferred_fov(fov), maglimit=maglimit) for name in objects]
+
+            centroids = unique(vstack([centroids for centroids, _ in charts]))
+            sequence = unique(vstack([sequence for _, sequence in charts]))
+        else:
+            centroids, sequence = self.get_chart(object_name, fov=preferred_fov(fov), maglimit=maglimit)
+            target = self.get_target(object_name)
+            centroids = vstack([QTable([target])['auid', 'radec2000'], centroids])
+        return centroids, sequence

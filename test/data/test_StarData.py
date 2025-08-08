@@ -112,3 +112,16 @@ class StarDataTest(unittest.TestCase):
         sd = StarData('/home/test')
         target = sd.get_target('Polaris')
         self.assertEqual(len(target), 6)
+
+    @patch(f"vsopy.data.star_data.QTable.write")
+    @patch.object(AavsoApi, 'get_star_chart')
+    @patch.object(AavsoApi, 'get_vsx_votable')
+    @patch.object(AavsoParser, 'parse_vsx_votable')
+    def test_collect_stars(self, parse_vsx_votable, get_vsx_votable, get_norm_star_chart, mock_write):
+        get_vsx_votable.return_value = '<dummy/>'
+        parse_vsx_votable.return_value = TARGETS_TABLE
+        get_norm_star_chart.return_value = STAR_CHART
+        sd = StarData('/home/test')
+        centroids, sequence = sd.collect_stars('Polaris', 60*u.arcmin, 15*u.mag)
+        self.assertEqual(len(centroids), 2)
+        self.assertEqual(len(sequence), 4)
