@@ -89,11 +89,13 @@ class SettingsTest(unittest.TestCase):
         s.photometry(('X', 'Y')).set_check('check-star-1')
         self.assertEqual(s.data_["diff_photometry"]["XY"]["check"], 'check-star-1')
 
+    @patch('vsopy.util.Settings.Path.exists', return_value=True)
     @patch('builtins.open', new_callable=mock_open, read_data=DEFAULT_JSON)
-    def test_load(self, mock_open):
+    def test_load(self, mock_open, mock_exists):
         SETTINGS_PATH='/home/user/settings.json'
         s = Settings(SETTINGS_PATH)
         mock_open.assert_called_once_with(SETTINGS_PATH)
+        mock_exists.assert_called_once()
 
         ap = s.aperture
         self.assertEqual(ap.r, 2*u.arcsec)

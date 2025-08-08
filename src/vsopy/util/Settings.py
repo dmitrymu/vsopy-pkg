@@ -1,5 +1,6 @@
 import astropy.units as u
 import json
+from pathlib import Path
 
 def convert_to_unit(x, unit, equiv=None):
     return (x.to(unit) if equiv is None else x.to(unit, equiv))  if hasattr(x, 'unit') else x * unit
@@ -72,10 +73,18 @@ class PhotometrySettings:
 class Settings:
     def __init__(self, path) -> None:
         self.data_ = {}
-        if not path is None:
+        self.path_ = path
+        if not path is None and Path(path).exists():
             with open(path) as file:
                 self.data_ = json.load(file)
         self.disabled_ = set(self.data_['disabled']) if 'disabled' in self.data_ else set()
+
+    def save(self):
+        if self.path_ is None:
+            raise ValueError("Cannot save settings, path is not set.")
+        with open(self.path_, 'w') as file:
+            json.dump(self.data_, file, indent=4)
+
 
     @property
     def data(self):
