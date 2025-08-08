@@ -6,7 +6,7 @@ from astropy.units import Quantity
 
 
 def name_for_api(star_name):
-    return star_name.replace(' ', '+')
+    return star_name.replace(' ', '+').replace('_', '+')
 
 def q_value(q):
     return q.value if hasattr(q, 'value') else q
