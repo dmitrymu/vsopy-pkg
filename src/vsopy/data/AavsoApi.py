@@ -3,6 +3,7 @@ import io
 import astropy.units as u
 from astropy.utils.data import download_file
 from astropy.units import Quantity
+from collections.abc import Callable
 
 
 def name_for_api(star_name):
@@ -20,7 +21,7 @@ class AavsoApi:
         :py:func:`astropy.utils.data.download_file`.
     """
 
-    def __init__(self, cache_web_content=True) -> None:
+    def __init__(self, cache_web_content:bool=True) -> None:
         """Create API client for AAVSO database
 
         :param cache_web_content: specify whether to cache downloaded content, defaults to True
@@ -64,8 +65,8 @@ class AavsoApi:
         """
         with self.fetch(uri) as stream:
             return stream.read()
-
-    def _fetch_content(uri) -> str:
+    @staticmethod
+    def _fetch_content(uri:Callable[..., str]) -> Callable[..., str]:
         """Decorator to fetch content from a given URI.
         This decorator wraps a method to automatically fetch content from the
         specified URI when the method is called. The URI can be constructed

@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from astropy.io.typing import PathLike
+from os import PathLike
 from astropy.table import QTable, Row
 from collections.abc import Callable
 from typing import Any
@@ -8,7 +8,7 @@ from typing import Any
 class PersistentTable:
     """ A wrapper around QTable serialized to disk.
     """
-    def __init__(self, path:PathLike, initializer:Callable[[],None]=QTable) -> None:
+    def __init__(self, path:PathLike, initializer:Callable[...,QTable]=QTable) -> None:
         """Create the wrapper
 
         :param path: path to file with the table data.
@@ -26,7 +26,8 @@ class PersistentTable:
     def flush(self) -> None:
         """ Flush the table to the disk
         """
-        self.table_.write(self.path_, format=self.format_, overwrite=True)
+        if self.table_ is not None:
+            self.table_.write(self.path_, format=self.format_, overwrite=True)
 
     def get(self) -> QTable:
         """Get underlying table object
@@ -78,6 +79,8 @@ class PersistentTable:
         :rtype: Row | None
         :raises: KeyError if 'key' matches multiple rows.
         """
+        if self.table_ is None:
+            return None
         rows = self.get()[self.table_[field] == key]
         if len(rows) > 1:
             raise KeyError(f"{len(rows)} rows found for {field}={key}")
@@ -93,6 +96,8 @@ class PersistentTable:
         :rtype: Row | None
         :raises: KeyError if multiple rows match the criteria.
         """
+        if self.table_ is None:
+            return None
         filter = np.all([self.get()[field] == val for field, val in keys.items()], axis=0)
         rows = self.get()[filter]
         if len(rows) > 1:

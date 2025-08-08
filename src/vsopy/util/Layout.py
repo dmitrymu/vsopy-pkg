@@ -1,6 +1,6 @@
 from os import PathLike
 from pathlib import Path
-from warnings import deprecated
+from typing_extensions import deprecated
 
 class LayoutBase:
     """ Generic layout

@@ -1,6 +1,4 @@
-from . import AavsoApi
-from . import AavsoParser
-from . import PersistentTable
+from vsopy.data import AavsoApi, AavsoParser, PersistentTable
 from os import PathLike
 from typing import Mapping, Any
 import astropy.units as u
@@ -21,8 +19,9 @@ class StarData:
           (see https://docs.astropy.org/en/stable/api/astropy.io.ascii.Ecsv.html#astropy.io.ascii.Ecsv)
         - Photometry tables are cached in memory
     """
-    def __init__(self, charts_dir,
-                 cache_web_content:bool=True, normalize_charts:bool=True):
+    def __init__(self, charts_dir:PathLike,
+                 cache_web_content:bool=True,
+                 normalize_charts:bool=True):
         """High-level API to acess AAVSO data.
 
         :param charts_dir: directory to store serialized charts.
