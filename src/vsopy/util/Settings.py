@@ -122,6 +122,9 @@ class Settings:
         label = f"{band[0]}{band[1]}"
         self.data_.setdefault("diff_photometry", {}).setdefault(label, {})['check'] = value
 
+    def set_bands(self, bands):
+        self.data_['bands'] = bands
+
     def is_star_enabled(self, star):
         return (star) not in self.disabled_
 
