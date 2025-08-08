@@ -55,7 +55,7 @@ def main():
     batch_images.write(session_layout.batch_images_file_path,
                        format='ascii.ecsv', overwrite=args.overwrite)
 
-    star_data = data.star_data(work_layout.charts_dir)
+    star_data = data.StarData(work_layout.charts_dir)
     centroids, sequence = star_data.get_chart(args.object, args.fov * u.arcmin)
     if not star_data.is_std_field(args.object):
         target = star_data.get_target(args.object)
