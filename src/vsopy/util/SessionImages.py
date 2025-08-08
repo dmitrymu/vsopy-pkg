@@ -34,7 +34,10 @@ def session_image_list(image_layout:TargetLayout) -> QTable:
                     if d.is_dir()
                     for row in ccdp.ImageFileCollection(d).summary])
     files['image_id'] = [n+1 for n in range(len(files))]
-    files['time'] = Time(files['date-obs'])
+    # format='isot' fixes known segfault in numpy
+    # see https://github.com/astropy/astropy/issues/18254
+    # and https://github.com/numpy/numpy/issues/29190
+    files['time'] = Time(files['date-obs'], format='isot')
     files['exposure'] = files['exptime'] * u.second
     files['temperature'] = files['ccd-temp'] * u.deg_C
     files.add_column([str(row['dir'] / row['file']) for row in files], name='path')
@@ -113,7 +116,7 @@ def batch_session_images(image_list_path:PathLike) -> tuple[QTable, QTable]:
                ))
             next += batch_size
         else:
-            print(f"Skipped file #{next+1} '{images['file']}'")
+            print(f"Skipped file #{next} '{images['path'][next]}'")
             next += 1
 
     batches.meta = {'start': np.min(images['time']), 'finish': np.max(images['time']),
