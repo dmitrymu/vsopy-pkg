@@ -2,6 +2,7 @@ import astropy.units as u # type: ignore
 import numpy as np
 from .. import reduce
 from ..data import CameraRegistry
+from astropy.coordinates import SkyCoord # type: ignore
 from astropy.nddata import CCDData # type: ignore
 from astropy.table import QTable, Column # type: ignore
 from photutils.aperture import (ApertureStats, # type: ignore
@@ -122,7 +123,24 @@ def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
         result['fwhm'] = ap_stats.fwhm
         result['orientation'] = ap_stats.orientation
 
-    return result
+    return result [~np.isnan(result['M']['mag'])]
+
+def filter_centroids(image:CCDData, centroids:QTable,
+                     radius:u.Quantity[u.arcsec]) -> QTable:
+    """Filter star centroids that fits in the image accounting for aperture.
+    """
+    def is_in_image(centroid:SkyCoord) -> np.bool:
+        corners = [centroid.spherical_offsets_by(radius, radius),
+                   centroid.spherical_offsets_by(-radius, radius),
+                   centroid.spherical_offsets_by(radius, -radius),
+                   centroid.spherical_offsets_by(-radius, -radius)
+                   ]
+        tested = list([corner.contained_by(image.wcs, image) for corner in corners])
+        return np.array(tested).all()
+
+    mask = [is_in_image(centroid) for centroid in centroids['radec2000']]
+    return centroids[mask]
+
 
 
 def process_image(path, matcher, solver, centroids, aperture):
@@ -132,6 +150,6 @@ def process_image(path, matcher, solver, centroids, aperture):
         reduced = reduce.calibrate_image(image,
                                         dark=calibration.dark,
                                         flat=calibration.flat)
-        return measure_photometry(reduced, centroids(reduced), aperture)
+        return measure_photometry(reduced, centroids(image), aperture)
     except Exception:
         return None

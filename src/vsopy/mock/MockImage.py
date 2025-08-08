@@ -3,10 +3,17 @@ import numpy as np
 
 from astropy import wcs
 from astropy.convolution import Gaussian2DKernel
+from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, StdDevUncertainty
-from collections import namedtuple
+from typing import NamedTuple
 
-MockStar = namedtuple('MockStar', ['peak', 'coord', 'fwhm', 'ellipticity', 'angle'])
+class MockStar(NamedTuple):
+    """Mock star for testing purposes."""
+    peak: float
+    coord: tuple[int, int]
+    fwhm: float
+    ellipticity: float
+    angle: u.Quantity[u.deg]
 
 class MockImageBuilder:
     def __init__(self, shape, seed=42):
