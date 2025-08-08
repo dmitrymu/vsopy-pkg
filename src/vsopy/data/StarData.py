@@ -1,6 +1,8 @@
 from . import AavsoApi
 from . import AavsoParser
 from . import PersistentTable
+from os import PathLike
+from typing import Mapping, Any
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
@@ -19,7 +21,8 @@ class StarData:
           (see https://docs.astropy.org/en/stable/api/astropy.io.ascii.Ecsv.html#astropy.io.ascii.Ecsv)
         - Photometry tables are cached in memory
     """
-    def __init__(self, charts_dir, cache_web_content=True, normalize_charts=True):
+    def __init__(self, charts_dir,
+                 cache_web_content:bool=True, normalize_charts:bool=True):
         """High-level API to acess AAVSO data.
 
         :param charts_dir: directory to store serialized charts.
@@ -63,7 +66,7 @@ class StarData:
         self.charts_cache_ = {}
 
     @property
-    def charts(self):
+    def charts(self) -> QTable:
         """ The table containing all downloaded charts.
 
             Returns:
@@ -72,7 +75,7 @@ class StarData:
         return self.charts_.get()
 
     @property
-    def std_fields(self):
+    def std_fields(self) -> QTable:
         """ The table containing all known standard fields.
 
             Returns:
@@ -82,12 +85,12 @@ class StarData:
         return self.std_fields_.get()
 
     @property
-    def targets(self):
+    def targets(self) -> QTable:
         """ The table containing all downloaded targets.
         """
         return self.targets_.get()
 
-    def get_chart_path(self, id):
+    def get_chart_path(self, id:str) -> PathLike:
         """ Construct the path to serialized photometry data
 
             Returns:
@@ -98,7 +101,7 @@ class StarData:
         else:
             return  self.charts_dir_ / f"{id}.ecsv"
 
-    def load_chart(self, id):
+    def load_chart(self, id:str) -> QTable:
         """ Access chart by ID, transparently download, cache, and serialize.
 
             Parameters:
@@ -127,7 +130,7 @@ class StarData:
         pt = self.charts_cache_[id]
         return (pt[0].get(), pt[1].get()) if self.normalize_ else pt.get()
 
-    def is_std_field(self, name):
+    def is_std_field(self, name:str) -> bool:
         """ Check whether the name belongs to standard field
 
             Returns:
@@ -135,7 +138,9 @@ class StarData:
         """
         return name in self.std_fields['name']
 
-    def get_chart(self, name, fov=None, maglimit=16.0*u.mag):
+    def get_chart(self, name:str,
+                  fov:u.Quantity[u.arcmin] | None=None,
+                  maglimit:u.Quantity[u.mag]=16.0*u.mag):
         """ Get photometry data for either star or standard field.
 
             Parameters:
@@ -192,7 +197,7 @@ class StarData:
         else:
             return self.load_chart(cached['id'])
 
-    def get_target(self, name):
+    def get_target(self, name:str) -> Mapping[str, Any]:
         """ Get target description from AAVSO VSX
         """
         cached = self.targets_.row_by_key('name', name)
