@@ -1,9 +1,17 @@
-from . import AavsoApi
-from . import AavsoParser
-from . import PersistentTable
 import astropy.units as u
-from astropy.table import QTable
+import numpy as np
+from vsopy.data import AavsoApi, AavsoParser, PersistentTable
+from os import PathLike
+from typing import Mapping, Any
+from astropy.coordinates import SkyCoord
+from astropy.table import QTable, unique, vstack
+from itertools import dropwhile
 from pathlib import Path
+
+def preferred_fov(fov: u.Quantity[u.arcmin]) -> u.Quantity[u.arcmin]:
+    preferred = [10, 20, 30, 60, 120, 180] * u.arcmin
+    tail = list(dropwhile(lambda x,: x < fov / np.sqrt(2), preferred))
+    return tail[0] if len(tail) > 0 else preferred[-1]
 
 
 class StarData:
@@ -18,7 +26,9 @@ class StarData:
           (see https://docs.astropy.org/en/stable/api/astropy.io.ascii.Ecsv.html#astropy.io.ascii.Ecsv)
         - Photometry tables are cached in memory
     """
-    def __init__(self, charts_dir, cache_web_content=True, normalize_charts=True):
+    def __init__(self, charts_dir:PathLike,
+                 cache_web_content:bool=True,
+                 normalize_charts:bool=True):
         """High-level API to acess AAVSO data.
 
         :param charts_dir: directory to store serialized charts.
@@ -48,10 +58,21 @@ class StarData:
                 id=['']
             ))
         )
+        self.targets_ = PersistentTable(
+            self.charts_dir_ / 'targets.ecsv',
+            lambda: PersistentTable.init_from_template(dict(
+                auid=[''],
+                name=[''],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[0]*u.deg),
+                varType=[''],
+                maxMag=[0.0]*u.mag,
+                minMag=[0.0]*u.mag,
+            ))
+        )
         self.charts_cache_ = {}
 
     @property
-    def charts(self):
+    def charts(self) -> QTable:
         """ The table containing all downloaded charts.
 
             Returns:
@@ -60,7 +81,7 @@ class StarData:
         return self.charts_.get()
 
     @property
-    def std_fields(self):
+    def std_fields(self) -> QTable:
         """ The table containing all known standard fields.
 
             Returns:
@@ -69,7 +90,13 @@ class StarData:
         """
         return self.std_fields_.get()
 
-    def get_chart_path(self, id):
+    @property
+    def targets(self) -> QTable:
+        """ The table containing all downloaded targets.
+        """
+        return self.targets_.get()
+
+    def get_chart_path(self, id:str) -> PathLike:
         """ Construct the path to serialized photometry data
 
             Returns:
@@ -80,7 +107,7 @@ class StarData:
         else:
             return  self.charts_dir_ / f"{id}.ecsv"
 
-    def load_chart(self, id):
+    def load_chart(self, id:str) -> QTable:
         """ Access chart by ID, transparently download, cache, and serialize.
 
             Parameters:
@@ -109,7 +136,7 @@ class StarData:
         pt = self.charts_cache_[id]
         return (pt[0].get(), pt[1].get()) if self.normalize_ else pt.get()
 
-    def is_std_field(self, name):
+    def is_std_field(self, name:str) -> bool:
         """ Check whether the name belongs to standard field
 
             Returns:
@@ -117,7 +144,9 @@ class StarData:
         """
         return name in self.std_fields['name']
 
-    def get_chart(self, name, fov=None, maglimit=16.0*u.mag):
+    def get_chart(self, name:str,
+                  fov:u.Quantity[u.arcmin] | None=None,
+                  maglimit:u.Quantity[u.mag]=16.0*u.mag):
         """ Get photometry data for either star or standard field.
 
             Parameters:
@@ -174,4 +203,41 @@ class StarData:
         else:
             return self.load_chart(cached['id'])
 
+    def get_target(self, name:str) -> Mapping[str, Any]:
+        """ Get target description from AAVSO VSX
+        """
+        cached = self.targets_.row_by_key('name', name)
+        if not cached:
+            text = self.api_.get_vsx_votable(name)
+            t = self.parser_.parse_vsx_votable(text)
+            target = t['auid', 'name', 'radec2000',
+                                                          'varType', 'maxMag', 'minMag'][0]
+            self.targets_.append(target)
+            return target
+        else:
+            return cached
 
+    def collect_stars(self, object_name:str,
+                  fov:u.Quantity[u.arcmin],
+                  maglimit:u.Quantity[u.mag]=16.0*u.mag) -> tuple[QTable, QTable]:
+        """ Collect all rrelevant stars fora goven object name
+
+            For standard fields, it collects all stars the field and all
+            its subfields.
+
+            For variable stars, it collects all stars in the chart and the
+            centroid of the target star itself.
+        """
+        centroids, sequence = None, None
+        if self.is_std_field(object_name):
+            objects = [name for name in self.std_fields['name']
+                            if name == object_name or name.startswith(f"{object_name} ")]
+            charts = [self.get_chart(name, fov=preferred_fov(fov), maglimit=maglimit) for name in objects]
+
+            centroids = unique(vstack([centroids for centroids, _ in charts]))
+            sequence = unique(vstack([sequence for _, sequence in charts]))
+        else:
+            centroids, sequence = self.get_chart(object_name, fov=preferred_fov(fov), maglimit=maglimit)
+            target = self.get_target(object_name)
+            centroids = vstack([QTable([target])['auid', 'radec2000'], centroids])
+        return centroids, sequence

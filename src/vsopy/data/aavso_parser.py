@@ -4,7 +4,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import QTable, Column
-from warnings import deprecated
+from typing_extensions import deprecated
 
 VSX_VOTABLE_FIELDS = set([
     'auid', 'name', 'const', 'radec2000', 'varType',
@@ -36,8 +36,8 @@ class AavsoParser:
     photometry data from the VSP tool.
     """
 
-    def __init__(self) -> None:
-        pass
+    # def __init__(self) -> None:
+    #     pass
 
     def parse_std_fields(self, text: str) -> QTable:
         """Parse result of :py:meth:`AavsoApi.get_std_fields`
@@ -93,8 +93,19 @@ class AavsoParser:
         :rtype: QTable
         """
         root = ET.fromstring(xml)
-        table = root.find('RESOURCE').find('TABLE')
-        rows = list(table.find('DATA').find('TABLEDATA').iter('TR'))
+        resource = root.find('RESOURCE')
+        if resource is None:
+            raise RuntimeError("VOTABLE does not contain RESOURCE element")
+        table = resource.find('TABLE')
+        if table is None:
+            raise RuntimeError("VOTABLE does not contain TABLE element")
+        data = table.find('DATA')
+        if data is None:
+            raise RuntimeError("VOTABLE does not contain DATA element")
+        tabledata = data.find('TABLEDATA')
+        if tabledata is None:
+            raise RuntimeError("VOTABLE does not contain TABLEDATA element")
+        rows = list(tabledata.iter('TR'))
         num_rows = len(rows)
         if num_rows != 1:
             raise RuntimeError(
@@ -114,7 +125,7 @@ class AavsoParser:
                    else [float(value)]*u.mag if name in ['maxMag', 'minMag']
                       else [value]
                   for name, value in fields
-                  if name in VSX_VOTABLE_FIELDS}
+                  if name in VSX_VOTABLE_FIELDS and value is not None}
         return QTable(result)
 
     @deprecated("Use parse_norm_chart instead")
@@ -126,7 +137,7 @@ class AavsoParser:
         """
         chart = json.loads(text)
         if 'errors' in chart:
-            raise RuntimeError(f"Error from AAVSO API for target {meta['name']}: "
+            raise RuntimeError(f"Error from AAVSO API: "
                             f"{';'.join(chart['errors'])}")
         if len(chart['photometry']) == 0:
             return None
@@ -186,7 +197,7 @@ class AavsoParser:
         """
         chart = json.loads(text)
         if 'errors' in chart:
-            raise RuntimeError(f"Error from AAVSO API for target {meta['name']}: "
+            raise RuntimeError(f"Error from AAVSO API: "
                             f"{';'.join(chart['errors'])}")
         if len(chart['photometry']) == 0:
             return (None, None)

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vsopy"
-version = "0.1.5"
+version = "0.1.6"
 description = "A Python package for astrophotometry automation."
 authors = [{name ="Dmitry Mukhortov", email = "d.v.mukhortov@gmail.com"}]
 maintainers = [{name ="Dmitry Mukhortov", email = "d.v.mukhortov@gmail.com"}]
@@ -43,3 +43,8 @@ vso-list-images = "vsopy.scripts.list_images:main"
 vso-batch-images = "vsopy.scripts.batch_images:main"
 vso-measure-images = "vsopy.scripts.measure_images:main"
 vso-prepare-session = "vsopy.scripts.prepare_session:main"
+
+[tool.mypy]
+python_version = "3.10"
+#strict = true
+ignore_missing_imports = true

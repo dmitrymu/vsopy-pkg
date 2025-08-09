@@ -69,6 +69,7 @@ class WorkLayoutTest(unittest.TestCase):
         self.assertEqual(str(l.root_dir), str(Path(root)))
         self.assertEqual(str(l.calibr_dir), str(Path(root) / 'calibr'))
         self.assertEqual(str(l.charts_dir), str(Path(root) / 'charts'))
+        self.assertEqual(str(l.charts.root_dir), str(Path(root) / 'charts'))
 
         self.assertEqual(str(l.get_session(session).root_dir),
                          str(Path(root) / 'session' / Path(tag) / Path(target)))
@@ -95,6 +96,25 @@ class SessionLayoutTest(unittest.TestCase):
         self.assertEqual(str(l.images_file_path), str(l.root_dir / 'images.ecsv'))
         self.assertEqual(str(l.measured_file_path), str(l.root_dir / 'measured.ecsv'))
         self.assertEqual(str(l.photometry_file_path), str(l.root_dir / 'photometry.ecsv'))
+
+
+class ChartsLayoutTest(unittest.TestCase):
+
+    def test_layout(self):
+        root = '/home/test'
+        target='Polaris'
+        l = WorkLayout(root, create=False)
+        c = l.charts
+
+        self.assertEqual(str(c.root_dir), str(Path(root) / 'charts'))
+        self.assertEqual(str(c.charts_file_path), str(c.root_dir / 'charts.ecsv'))
+        self.assertEqual(str(c.std_fields_file_path), str(c.root_dir / 'std_fields.ecsv'))
+        self.assertEqual(str(c.targets_file_path), str(c.root_dir / 'targets.ecsv'))
+        self.assertEqual(str(c.get_centroid_file_path(target)),
+                         str(c.root_dir / f'{target}_c.ecsv'))
+        self.assertEqual(str(c.get_sequence_file_path(target)),
+                         str(c.root_dir / f'{target}_s.ecsv'))
+
 
 if __name__ == '__main__':
     unittest.main()

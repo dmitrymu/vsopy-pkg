@@ -22,6 +22,15 @@ CHARTS_TEMPLATE = dict(
     id=['']
 )
 
+TARGETS_TEMPLATE = dict(
+                auid=[''],
+                name=[''],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[0]*u.deg),
+                varType=[''],
+                maxMag=[0.0]*u.mag,
+                minMag=[0.0]*u.mag,
+            )
+
 STAR_CHART = """
 {"chartid":"X37313LN",
  "photometry":[
@@ -33,12 +42,22 @@ STAR_CHART = """
 }
 """
 
+TARGETS_TABLE = QTable(dict(
+                auid=['000-AAA-000'],
+                name=['Polaris'],
+                radec2000=SkyCoord(ra=[0]*u.deg, dec=[90]*u.deg),
+                varType=['VVVV'],
+                maxMag=[0.0]*u.mag,
+                minMag=[10.0]*u.mag,
+            ))
+
 class StarDataTest(unittest.TestCase):
 
     @patch.object(PersistentTable, "get")
     def test_construct_from_initializer(self, mock_get):
         mock_get.side_effect = [PersistentTable.init_from_template(CHARTS_TEMPLATE),
-                                STD_FIELDS, STD_FIELDS
+                                STD_FIELDS, STD_FIELDS,
+                                PersistentTable.init_from_template(TARGETS_TEMPLATE)
                                 ]
         sd = StarData('/home/test')
         charts = sd.charts
@@ -49,28 +68,31 @@ class StarDataTest(unittest.TestCase):
         self.assertEqual(len(fields), 1)
         self.assertEqual(set(fields.colnames), set(['name', 'fov', 'radec2000', 'count']))
         self.assertTrue(sd.is_std_field('SA00'))
+        targets = sd.targets
+        self.assertEqual(len(targets), 0)
+        self.assertEqual(set(targets.colnames), set(['auid', 'name', 'radec2000', 'varType', 'maxMag', 'minMag']))
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_star_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_star_chart(self, parse_std_fields, mock_get_star_chart, mock_write):
         parse_std_fields.return_value = STD_FIELDS
         mock_get_star_chart.return_value = STAR_CHART
-        sd = StarData('/home/test')
+        sd = StarData('/home/test', normalize_charts=False)
         chart = sd.get_chart('A Star', 60*u.arcmin, 15*u.mag)
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
-    def test_get_star_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
+    def test_get_std_field_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
         parse_std_fields.return_value = STD_FIELDS
         mock_get_std_field_chart.return_value = STAR_CHART
         sd = StarData('/home/test', normalize_charts=False)
         chart = sd.get_chart('SA00')
         self.assertEqual(len(chart), 1)
 
-    @patch(f"vsopy.data.PersistentTable.QTable.write")
+    @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_std_field_chart')
     @patch.object(AavsoParser, 'parse_std_fields')
     def test_get_norm_star_chart(self, parse_std_fields, mock_get_std_field_chart, mock_write):
@@ -79,4 +101,27 @@ class StarDataTest(unittest.TestCase):
         sd = StarData('/home/test')
         centroids, sequence = sd.get_chart('SA00')
         self.assertEqual(len(centroids), 1)
+        self.assertEqual(len(sequence), 4)
+
+    @patch(f"vsopy.data.star_data.QTable.write")
+    @patch.object(AavsoApi, 'get_vsx_votable')
+    @patch.object(AavsoParser, 'parse_vsx_votable')
+    def test_get_target(self, parse_vsx_votable, get_vsx_votable, mock_write):
+        get_vsx_votable.return_value = '<dummy/>'
+        parse_vsx_votable.return_value = TARGETS_TABLE
+        sd = StarData('/home/test')
+        target = sd.get_target('Polaris')
+        self.assertEqual(len(target), 6)
+
+    @patch(f"vsopy.data.star_data.QTable.write")
+    @patch.object(AavsoApi, 'get_star_chart')
+    @patch.object(AavsoApi, 'get_vsx_votable')
+    @patch.object(AavsoParser, 'parse_vsx_votable')
+    def test_collect_stars(self, parse_vsx_votable, get_vsx_votable, get_norm_star_chart, mock_write):
+        get_vsx_votable.return_value = '<dummy/>'
+        parse_vsx_votable.return_value = TARGETS_TABLE
+        get_norm_star_chart.return_value = STAR_CHART
+        sd = StarData('/home/test')
+        centroids, sequence = sd.collect_stars('Polaris', 60*u.arcmin, 15*u.mag)
+        self.assertEqual(len(centroids), 2)
         self.assertEqual(len(sequence), 4)

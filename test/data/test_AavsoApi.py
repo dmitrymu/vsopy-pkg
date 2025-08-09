@@ -11,7 +11,7 @@ def mock_open(uri, **kwargs):
 
 class AavsoApiTest(unittest.TestCase):
 
-    @patch(f"vsopy.data.AavsoApi.download_file", mock_download_success)
+    @patch(f"vsopy.data.aavso_api.download_file", mock_download_success)
     @patch(f"builtins.open", mock_open)
     def test_download(self):
         api = AavsoApi()

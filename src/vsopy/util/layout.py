@@ -1,14 +1,18 @@
+from os import PathLike
 from pathlib import Path
+from typing_extensions import deprecated
 
 class LayoutBase:
     """ Generic layout
         Supports root directory and enforces directory creation.
     """
-    def __init__(self, root, create=True):
+    def __init__(self, root:PathLike, create:bool=True):
         """ Set up layout at root directory.
 
-            root - path to root directory.
-            create - whether to enforce directory creation.
+            :param root: path to root directory.
+            :type root: path-like
+            :param create: whether to enforce directory creation. Defaults to True.
+            :type create: bool, optional
         """
         self.create_ = create
         self.root_ = Path(root)
@@ -32,35 +36,78 @@ class LayoutBase:
         """
         return self.root_
 
+
 class Session:
-    def __init__(self, tag=None, name=None):
+    """ Session object representing a measurement session.
+    """
+    def __init__(self, tag:str=None, name:str=None):
+        """Create a session object.
+
+        :param tag: session tag, defaults to None
+        :type tag: str, optional
+        :param name: session object name, defaults to None
+        :type name: str, optional
+        """
         self.tag_ = tag
         self.name_ = name.replace(' ', '_')
 
     @property
-    def rel_path(self):
+    def rel_path(self) -> Path:
+        """ Returns relative path to the session directory
+
+        :return: relative path to the session directory
+        :rtype: Path
+        """
         return Path(self.tag_) / Path(self.name_)
 
     @property
     def name(self):
         return self.name_.replace('_', '')
 
+
 class TargetLayout(LayoutBase):
+    """ Layout for target images in a session.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @property
     @LayoutBase._enforce
-    def lights_dir(self):
+    def lights_dir(self) -> Path:
         return self.root_dir / 'Light'
+
 
 class ImageLayout(LayoutBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def get_images(self, session) ->Path:
+    def get_images(self, session:Session) -> TargetLayout:
         return TargetLayout(self.root_dir / session.rel_path,
                            create=self.create_)
+
+
+class ChartsLayout(LayoutBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def charts_file_path(self):
+        return self.root_dir / 'charts.ecsv'
+
+    @property
+    def std_fields_file_path(self):
+        return self.root_dir / 'std_fields.ecsv'
+
+    @property
+    def targets_file_path(self):
+        return self.root_dir / 'targets.ecsv'
+
+    def get_centroid_file_path(self, name):
+        return self.root_dir / f'{name}_c.ecsv'
+
+    def get_sequence_file_path(self, name):
+        return self.root_dir / f'{name}_s.ecsv'
+
 
 class SessionLayout(LayoutBase):
     def __init__(self, *args, **kwargs):
@@ -84,6 +131,7 @@ class SessionLayout(LayoutBase):
         return self.root_dir / 'batch_images.ecsv'
 
     @property
+    @deprecated("Use centroid_file_path and sequence_file_path instead")
     def chart_file_path(self):
         return self.root_dir / 'chart.ecsv'
 
@@ -108,9 +156,9 @@ class SessionLayout(LayoutBase):
         return self.root_dir / 'measured.ecsv'
 
     @property
+    @deprecated("Use measured_file_path instead")
     def photometry_file_path(self):
         return self.root_dir / 'photometry.ecsv'
-
 
 
 class WorkLayout(LayoutBase):
@@ -124,15 +172,20 @@ class WorkLayout(LayoutBase):
 
     @property
     @LayoutBase._enforce
+    @deprecated("Use charts instead")
     def charts_dir(self):
         return self.root_dir / 'charts'
+
+    @property
+    def charts(self):
+        return ChartsLayout(self.root_dir / 'charts', create=self.create_)
 
     @property
     @LayoutBase._enforce
     def calibr_dir(self):
         return self.root_dir / 'calibr'
 
-    def get_session(self, session) ->Path:
+    def get_session(self, session) -> SessionLayout:
         return SessionLayout(self.root_dir / Path('session') / session.rel_path,
                              create=self.create_)
 
