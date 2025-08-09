@@ -1,4 +1,5 @@
-from astropy.table import QTable, join
+import numpy as np
+from astropy.table import QTable, join, unique
 
 class BatchDataProvider:
     def __init__(self, session):
@@ -6,7 +7,9 @@ class BatchDataProvider:
         self.batch_images_ = QTable.read(session.batch_images_file_path)
         self.images_ = QTable.read(session.images_file_path)
         self.measured_ = QTable.read(session.measured_file_path)
-        self.sequence_ = QTable.read(session.sequence_file_path)
+        measured_stars = unique(self.measured_, keys=['auid'])
+        sequence = QTable.read(session.sequence_file_path)
+        self.sequence_ = sequence[np.isin(sequence['auid'],(measured_stars['auid']))]
 
     @property
     def target_auid(self):

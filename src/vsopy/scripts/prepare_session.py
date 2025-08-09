@@ -57,9 +57,6 @@ def main():
 
     star_data = data.StarData(work_layout.charts_dir)
     centroids, sequence = star_data.collect_stars(args.object, args.fov * u.arcmin)
-    if not star_data.is_std_field(args.object):
-        target = star_data.get_target(args.object)
-        centroids = vstack(target['auid', 'radec2000'], centroids, metadata_conflicts='silent')
     centroids.write(session_layout.centroid_file_path,
                    format='ascii.ecsv', overwrite=args.overwrite)
     sequence.write(session_layout.sequence_file_path,
