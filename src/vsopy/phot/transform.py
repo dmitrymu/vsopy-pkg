@@ -225,11 +225,13 @@ def batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_a
                             row[provider.instr(bands[0])].value, row[provider.instr(bands[1])].value,
                             row[provider.targ(bands[0])].value, row[provider.targ(bands[1])].value
                             ) for row in xfm_input]
-    a, b, _, _ =zip(*transformed)
+    a, b, a_1, b_1 =zip(*transformed)
     return QTable({
         'batch_id': xfm_input['batch_id'],
         bands[0]: Column(list(a), dtype = MagErrDtype, unit=u.mag),
-        bands[1]: Column(list(b), dtype = MagErrDtype, unit=u.mag)
+        bands[1]: Column(list(b), dtype = MagErrDtype, unit=u.mag),
+        f"_{bands[0]}": Column(list(a_1), dtype = MagErrDtype, unit=u.mag),
+        f"_{bands[1]}": Column(list(b_1), dtype = MagErrDtype, unit=u.mag)
         })
 
 def batch_diff_photometry(provider, bands, comparison_auid, target_auid=None):
