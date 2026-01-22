@@ -202,9 +202,11 @@ def apply_simple_transform(xfm:SimpleTransform,
     r2 =  transform(Tb, Tab, B_c, A_c, b_c, a_c, b_t, a_t)
     return r1[0], r2[0], r2[1], r1[1]
 
-def batch_create_simple_transform(provider, bands):
+def batch_create_simple_transform(provider, bands, exclude = []):
 
     data = provider.batch_and_sequence_band_pair(bands)
+    for x in exclude:
+        data = data[data['auid'] != x]
     grouped = data.group_by(['batch_id'])
 
     xfm = [create_simple_transform(batch[bands[0]]['mag'], batch[bands[1]]['mag'],
@@ -243,6 +245,6 @@ def batch_diff_photometry(provider, bands, comparison_auid, target_auid=None):
     to the instrumental magnitudes extracted from those images.
     """
 
-    xfm = batch_create_simple_transform(provider, bands)
+    xfm = batch_create_simple_transform(provider, bands, [comparison_auid] if target_auid is None else [comparison_auid, target_auid])
     return batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_auid)
 
