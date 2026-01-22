@@ -1,4 +1,5 @@
 import astropy.units as u
+import numpy as np
 import unittest
 
 from unittest.mock import patch, mock_open
@@ -55,7 +56,16 @@ class SettingsTest(unittest.TestCase):
   "bands": [
     "X",
     "Y"
-  ]
+  ],
+  "diff_photometry": {
+    "XY": {
+      "comp": "comp-star-1",
+      "check": "check-star-2",
+      "start": 0,
+      "finish": 10,
+      "rejected": [1, 2, 3]
+    }
+  }
 }
 """
 
@@ -86,8 +96,19 @@ class SettingsTest(unittest.TestCase):
 
     def test_photometry_settings(self):
         s = Settings(None)
+        self.assertSetEqual(s.photometry(('X', 'Y')).rejected, set())
+
         s.photometry(('X', 'Y')).set_check('check-star-1')
         self.assertEqual(s.data_["diff_photometry"]["XY"]["check"], 'check-star-1')
+
+        s.photometry(('X', 'Y')).set_rejected(None)
+        self.assertSetEqual(s.photometry(('X', 'Y')).rejected, set())
+
+        s.photometry(('X', 'Y')).set_rejected([])
+        self.assertSetEqual(s.photometry(('X', 'Y')).rejected, set())
+
+        s.photometry(('X', 'Y')).set_rejected(np.array([42]))
+        self.assertSetEqual(s.photometry(('X', 'Y')).rejected, set([42]))
 
     @patch('vsopy.util.Settings.Path.exists', return_value=True)
     @patch('builtins.open', new_callable=mock_open, read_data=DEFAULT_JSON)
@@ -103,3 +124,7 @@ class SettingsTest(unittest.TestCase):
         self.assertEqual(ap.r_out, 8*u.arcsec)
 
         self.assertSequenceEqual(s.bands, ['X', 'Y'])
+
+        self.assertEqual(s.get_comp(('X', 'Y')), 'comp-star-1')
+        self.assertEqual(s.get_check(('X', 'Y')), 'check-star-2')
+        self.assertSetEqual(s.get_rejected(('X', 'Y')), set([1,2,3]))

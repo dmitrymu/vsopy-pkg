@@ -57,6 +57,9 @@ class PhotometrySettings:
     @property
     def finish(self):
         return self.data_['finish']
+    @property
+    def rejected(self):
+        return set(self.data_['rejected']) if 'rejected' in self.data_ else set()
 
     def set_comp(self, value):
         self.data_.setdefault("comp", value)
@@ -69,6 +72,9 @@ class PhotometrySettings:
 
     def set_finish(self, value):
         self.data_["finish"] = value
+
+    def set_rejected(self, value):
+        self.data_["rejected"] = [] if value is None else list(value)
 
 class Settings:
     def __init__(self, path) -> None:
@@ -111,6 +117,10 @@ class Settings:
         band_settings = self.data_["diff_photometry"][f"{band[0]}{band[1]}"]
         return  band_settings['check'] if 'check' in band_settings else None
 
+    def get_rejected(self, band):
+        band_settings = self.data_["diff_photometry"][f"{band[0]}{band[1]}"]
+        return  self.photometry(band).rejected
+
     def set_aperture(self, aperture):
         self.data_.setdefault('aperture', {}).update(aperture.to_dict())
 
@@ -121,6 +131,10 @@ class Settings:
     def set_check(self, band, value):
         label = f"{band[0]}{band[1]}"
         self.data_.setdefault("diff_photometry", {}).setdefault(label, {})['check'] = value
+
+    def set_rejected(self, band, value):
+        label = f"{band[0]}{band[1]}"
+        self.data_.setdefault("diff_photometry", {}).setdefault(label, {})['rejected'] = value
 
     def set_bands(self, bands):
         self.data_['bands'] = bands
