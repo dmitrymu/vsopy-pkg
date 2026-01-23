@@ -2,6 +2,40 @@ import numpy as np
 from astropy.table import QTable, join, unique
 
 class BatchDataProvider:
+    """Common interface to all photometry-lelated data for a single session. 
+
+    The class loads the following tables from the session directory
+    - images:
+        - image_id 
+        - filter 
+        - time
+        - exposure 
+        - airmass 
+        - temperature 
+        - path
+    - batches: 
+        - batch_id 
+        - time 
+        - temperature 
+        - airmass 
+        - time_range 
+        - temperature_range 
+        - airmass_range
+    - batch_images:
+        - batch_id 
+        - image_id
+    - measured:
+        - image_id 
+        - auid 
+        - M (mag, err)  instrumental magnitude and its uncertainty
+        - flux 
+        - snr           in dB
+        - peak          normalized by ADU maximum, i.e. [0..1]
+    - sequence:
+        - auid 
+        - band 
+        - M (mag, err)  catalog magnitude and its uncertainty
+    """
     def __init__(self, session):
         self.batches_ = QTable.read(session.batches_file_path)
         self.batch_images_ = QTable.read(session.batch_images_file_path)
@@ -22,11 +56,22 @@ class BatchDataProvider:
         return f"targ {band}"
 
     def sequence_band(self, band):
+        """Given a band, return a table with catalog magnitude in that band.
+          Columns: 
+            - auid, 
+            - name of the band (renamed from 'M')
+        """
         M = self.sequence_[self.sequence_['band'] == band]['auid', 'M']
         M.rename_column('M', band)
         return M
 
     def sequence_band_pair(self, band_pair):
+        """ Given a pair of band names, return a table with catalog magnitudes in those bands.
+          Columns: 
+            - auid, 
+            - name of band[0] (renamed from 'M'), 
+            - name of band[1] (renamed from 'M')
+        """
         bandA, bandB = band_pair
         return join(self.sequence_band(bandA), self.sequence_band(bandB), 'auid')
 
