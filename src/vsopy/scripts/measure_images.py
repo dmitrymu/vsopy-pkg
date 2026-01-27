@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 import sys
 import argparse
 import concurrent.futures as cf
+import traceback
 from astropy.table import QTable, vstack
 from vsopy import phot
 from vsopy import reduce
@@ -20,6 +21,7 @@ def parse_args():
     parser.add_argument('-w', '--work-dir', type=str, required=True, help='Work directory')
     parser.add_argument('-p', '--parallel', type=int, default=1, help='Number of parallel workers')
     parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite output files')
+    parser.add_argument('-v', '--verbose', action='store_true', default=False, help='Verbose output')
 
     return parser.parse_args()
 
@@ -71,6 +73,8 @@ def main():
             return future.result()
         except Exception as e:
             blacklist.add(path, e)
+            if args.verbose:
+                traceback.print_exc()
             return None
 
     tables = [get_result(f) for f in futures]
