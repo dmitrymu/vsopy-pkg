@@ -144,12 +144,9 @@ def filter_centroids(image:CCDData, centroids:QTable,
 
 
 def process_image(path, matcher, solver, centroids, aperture):
-    try:
-        image = reduce.update_wcs(CCDData.read(path, unit='adu'), solver(path))
-        calibration = matcher.match(image.header)
-        reduced = reduce.calibrate_image(image,
-                                        dark=calibration.dark,
-                                        flat=calibration.flat)
-        return measure_photometry(reduced, centroids(image), aperture)
-    except Exception:
-        return None
+    image = reduce.update_wcs(CCDData.read(path, unit='adu'), solver(path))
+    calibration = matcher.match(image.header)
+    reduced = reduce.calibrate_image(image,
+                                    dark=calibration.dark,
+                                    flat=calibration.flat)
+    return measure_photometry(reduced, centroids(image), aperture)
