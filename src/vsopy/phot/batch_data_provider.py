@@ -2,38 +2,38 @@ import numpy as np
 from astropy.table import QTable, join, unique
 
 class BatchDataProvider:
-    """Common interface to all photometry-lelated data for a single session. 
+    """Common interface to all photometry-lelated data for a single session.
 
     The class loads the following tables from the session directory
     - images:
-        - image_id 
-        - filter 
+        - image_id
+        - filter
         - time
-        - exposure 
-        - airmass 
-        - temperature 
+        - exposure
+        - airmass
+        - temperature
         - path
-    - batches: 
-        - batch_id 
-        - time 
-        - temperature 
-        - airmass 
-        - time_range 
-        - temperature_range 
+    - batches:
+        - batch_id
+        - time
+        - temperature
+        - airmass
+        - time_range
+        - temperature_range
         - airmass_range
     - batch_images:
-        - batch_id 
+        - batch_id
         - image_id
     - measured:
-        - image_id 
-        - auid 
+        - image_id
+        - auid
         - M (mag, err)  instrumental magnitude and its uncertainty
-        - flux 
+        - flux
         - snr           in dB
         - peak          normalized by ADU maximum, i.e. [0..1]
     - sequence:
-        - auid 
-        - band 
+        - auid
+        - band
         - M (mag, err)  catalog magnitude and its uncertainty
     """
     def __init__(self, session):
@@ -47,7 +47,11 @@ class BatchDataProvider:
 
     @property
     def target_auid(self):
-        return self.sequence_.meta['auid'] if 'auid' in self.sequence_.meta else None
+        return self.sequence_.meta.get('auid')
+
+    @property
+    def chart_id(self):
+        return self.sequence_.meta.get('chart_id')
 
     def instr(self, band):
         return f"instr {band}"
@@ -55,10 +59,13 @@ class BatchDataProvider:
     def targ(self, band):
         return f"targ {band}"
 
+    def sequence_star(self, auid):
+        return self.sequence_[self.sequence_['auid'] == auid]
+
     def sequence_band(self, band):
         """Given a band, return a table with catalog magnitude in that band.
-          Columns: 
-            - auid, 
+          Columns:
+            - auid,
             - name of the band (renamed from 'M')
         """
         M = self.sequence_[self.sequence_['band'] == band]['auid', 'M']
@@ -67,9 +74,9 @@ class BatchDataProvider:
 
     def sequence_band_pair(self, band_pair):
         """ Given a pair of band names, return a table with catalog magnitudes in those bands.
-          Columns: 
-            - auid, 
-            - name of band[0] (renamed from 'M'), 
+          Columns:
+            - auid,
+            - name of band[0] (renamed from 'M'),
             - name of band[1] (renamed from 'M')
         """
         bandA, bandB = band_pair

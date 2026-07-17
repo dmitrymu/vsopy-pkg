@@ -202,6 +202,57 @@ def apply_simple_transform(xfm:SimpleTransform,
     r2 =  transform(Tb, Tab, B_c, A_c, b_c, a_c, b_t, a_t)
     return r1[0], r2[0], r2[1], r1[1]
 
+
+def apply_simple_transform_lsq(xfm:SimpleTransform,
+                           _A_c:MagErr, _B_c:MagErr,
+                           _a_c:MagErr, _b_c:MagErr,
+                           _a_t:MagErr, _b_t:MagErr) -> tuple[MagErr, MagErr, MagErr, MagErr]:
+        Tab, Tab_err = xfm[2]
+        Ta, Ta_err = xfm[0]
+        Tb, Tb_err = xfm[1]
+        Ac, Ac_err = _A_c
+        Bc, Bc_err = _B_c
+        ac, ac_err = _a_c
+        bc, bc_err = _b_c
+        at, at_err = _a_t
+        bt, bt_err = _b_t
+
+        dC = (at-bt) - (ac-bc)
+        Ct = Ac - Bc + Tab * dC
+
+        mA = np.array([
+                [1, 0],
+                [-1, 1],
+                [0, 1],
+                [1, -1]
+        ])
+
+        vb = np.array([
+                at + (Ac-ac) + Ta * Ct,
+                -Ct,
+                bt + (Bc-bc) + Tb * Ct,
+                Ct
+        ])
+
+        x, _, _, _ = np.linalg.lstsq(mA, vb, rcond=None)
+
+        dC_err = np.linalg.norm([at_err, bt_err, ac_err, bc_err])
+        Tab_dC_err = Tab * dC * np.linalg.norm([Tab_err/Tab, dC_err/dC])
+        Ct_err = np.linalg.norm([Ac_err, Bc_err, Tab_dC_err])
+        TaCt_err = Ta * Ct * np.linalg.norm([Ta_err/Ta, Ct_err/Ct])
+        TbCt_err = Tb * Ct * np.linalg.norm([Tb_err/Tb, Ct_err/Ct])
+
+        At1_err = np.linalg.norm([at_err, Ac_err, ac_err, TaCt_err])
+        Bt1_err = np.linalg.norm([At1_err, Ct_err])
+        Bt2_err = np.linalg.norm([bt_err, Bc_err, bc_err, TbCt_err])
+        At2_err = np.linalg.norm([Bt2_err, Ct_err])
+
+        # Assume that np.linalg.lstsq calculate average of two magnitudes
+        At_err = np.linalg.norm([At1_err, At2_err]) / 2
+        Bt_err = np.linalg.norm([Bt1_err, Bt2_err]) / 2
+
+        return MagErr(x[0], At_err), MagErr(x[1], Bt_err), MagErr(x[0], At_err), MagErr(x[1], Bt_err)
+
 def batch_create_simple_transform(provider, bands, exclude = []):
 
     data = provider.batch_and_sequence_band_pair(bands)
@@ -218,12 +269,13 @@ def batch_create_simple_transform(provider, bands, exclude = []):
         'xfm': Column(xfm, dtype = xfm_dtype)
     })
 
-def batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_auid=None):
+def batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_auid=None, use_lsq=False):
 
     comp = provider.batch_comp_star(bands, comparison_auid)
     targ = provider.batch_target_star(bands, target_auid if target_auid is not None else provider.target_auid)
     xfm_input = join(join(comp, targ, 'batch_id'), xfm, 'batch_id')
-    transformed = [apply_simple_transform(row['xfm'], row[bands[0]].value, row[bands[1]].value,
+    apply = apply_simple_transform_lsq if use_lsq else apply_simple_transform
+    transformed = [apply(row['xfm'], row[bands[0]].value, row[bands[1]].value,
                             row[provider.instr(bands[0])].value, row[provider.instr(bands[1])].value,
                             row[provider.targ(bands[0])].value, row[provider.targ(bands[1])].value
                             ) for row in xfm_input]
@@ -232,11 +284,9 @@ def batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_a
         'batch_id': xfm_input['batch_id'],
         bands[0]: Column(list(a), dtype = MagErrDtype, unit=u.mag),
         bands[1]: Column(list(b), dtype = MagErrDtype, unit=u.mag),
-        f"_{bands[0]}": Column(list(a_1), dtype = MagErrDtype, unit=u.mag),
-        f"_{bands[1]}": Column(list(b_1), dtype = MagErrDtype, unit=u.mag)
         })
 
-def batch_diff_photometry(provider, bands, comparison_auid, target_auid=None):
+def batch_diff_photometry(provider, bands, comparison_auid, target_auid=None, use_lsq=False):
     """Magnitude transformation for differential photometry.
 
     It uses simplified approach which ignores second order extinction.
@@ -246,5 +296,5 @@ def batch_diff_photometry(provider, bands, comparison_auid, target_auid=None):
     """
 
     xfm = batch_create_simple_transform(provider, bands, [comparison_auid] if target_auid is None else [comparison_auid, target_auid])
-    return batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_auid)
+    return batch_apply_simple_transform(provider, xfm, bands, comparison_auid, target_auid, use_lsq)
 

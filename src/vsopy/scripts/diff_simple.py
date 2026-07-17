@@ -9,9 +9,10 @@ import argparse
 import json
 from vsopy import phot, data, util
 from pathlib import Path
-from astropy.table import QTable
+from astropy.table import QTable, join
 from collections import namedtuple
 from operator import attrgetter
+from dataclasses import dataclass
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -24,8 +25,55 @@ def parse_args():
                         required=True, help='Work directory')
     parser.add_argument('--observer', type=str,
                         required=True, help='AAVSO observer code')
+    parser.add_argument('--sigma', type=float, default=3.0,
+                        help='Number of stdev to filter outliers by check star')
+    parser.add_argument('--overwrite', action='store_true',
+                        default=False, help='Overwrite output files')
+    parser.add_argument('--no-lsq', action='store_true',
+                        default=False, help='Don''t use least square solver')
 
     return parser.parse_args()
+
+@dataclass
+class BandResult:
+    data: QTable
+    err: float
+    comp: str
+    check: str
+
+@dataclass
+class BandPairResult:
+    a: BandResult
+    b: BandResult
+
+def columns_not_m(table, m):
+    cnames = table.column_names
+    exclude = [m, f'check {m}']
+    return table[[name for name in cnames if name not in exclude]]
+
+def measure_band_pair(provider, band, settings):
+        comp_auid = settings.get_comp(band)
+        check_auid = settings.get_check(band)
+        targ = phot.batch_diff_photometry(
+            provider,
+            band,
+            comp_auid,
+            provider.target_auid
+        )
+        check = phot.batch_diff_photometry(
+            provider,
+            band,
+            comp_auid,
+            check_auid
+        )
+        check.rename_columns([band[0], band[1]], [f'check {band[0]}', f'check {band[1]}'])
+        ab = join(join(targ, provider.batches_, keys='batch_id'), check, keys='batch_id')
+        a_err = np.linalg.norm(ab[band[0]]['err'])
+        b_err = np.linalg.norm(ab[band[1]]['err'])
+        return BandPairResult(
+            a = BandResult(columns_not_m(band[1]), a_err, comp_auid, check_auid),
+            b = BandResult(columns_not_m(band[0]), b_err, comp_auid, check_auid)
+        )
 
 
 def main():
@@ -36,46 +84,45 @@ def main():
     session_layout = layout.get_session(session)
     settings = util.Settings(session_layout.settings_file_path)
 
-    provider = phot.DataProvider(
-        QTable.read(session_layout.photometry_file_path),
-        QTable.read(session_layout.chart_file_path)
-    )
+    provider = phot.BatchDataProvider(session_layout)
+    comp_star = provider.get_star(settings.get_comp(band))
+    check_star = provider.get_star(settings.get_check(band))
 
-    def reject_outliers(data, band, sigma=2.0):
-        dc = data[f'check {band}']['mag'] - data[f'check std {band}']['mag']
+    def trim_time(data, begin, end):
+        flt = data['']
+
+    def reject_outliers(data, band, check_mag, sigma=3.0):
+        dc = data[f'check {band}']['mag'] - check_mag
         dc_mean = np.mean(dc)
         dc_std = np.std(dc)
         flt = np.abs(dc - dc_mean) < sigma*dc_std
-        return data[flt]
+        return data[flt], np.count_nonzero(~flt)
 
-    def total_err(table, band):
-        return np.sqrt(np.sum(table[band]['err']**2)/len(table))
-
-    BandResult = namedtuple('BandResult', ['err', 'data'])
-
-    bands = util.band_pairs(settings.bands)
+    bands = util.band_pairs(util.ordered_bands(settings.bands))
     result = {}
     for band in bands:
-        xfm = phot.BatchTransformer(
-            band,
-            settings.get_comp(band),
-            settings.get_check(band))
 
-        ab = xfm.calculate(provider)
-        a_err = total_err(ab, band[0])
-        b_err = total_err(ab, band[1])
-        result.setdefault(band[0], []).append(BandResult(err=a_err, data=ab))
-        result.setdefault(band[1], []).append(BandResult(err=b_err, data=ab))
+        ab = measure_band_pair(provider, band, settings)
+
+        result.setdefault(band[0], []).append(ab.a)
+        result.setdefault(band[1], []).append(ab.b)
+
 
     with open(session_layout.root_dir / 'report-simple.txt', mode='w') as f:
       report = data.AavsoReport(f,
-                                provider.target_name,
+                                provider.target_auid,
                                 provider.chart_id,
                                 args.observer)
       report.header()
       for band in settings.bands:
-        dt = min(result[band], key=attrgetter('err')).data
-        report.body(reject_outliers(dt, band), band)
+        comp = comp_star[comp_star['band'] == band]
+        check = check_star[comp_star['band'] == band]
+        item = min(result[band], key=attrgetter('err'))
+        dt = item.data
+        print(f"Selected {band} data with total error {item.err}")
+        passed, rejected_count = reject_outliers(dt, band, comp['M']['mag'][0], args.sigma)
+        print(f"Rejected {rejected_count} data points outside {args.sigma} sigma")
+        report.body(passed, band, comp, check)
 
     return 0
 

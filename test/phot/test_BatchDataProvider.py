@@ -55,7 +55,7 @@ SEQUENCE = QTable(dict(
               (12.0, .04), (13.0, .02), (4.0, .02)] * u.mag,
              dtype=MagErrDtype),
     ),
-    meta={'auid': 'star1'}
+    meta={'auid': 'star1', 'chart_id': 'chart1'}
 )
 
 def mock_session(root):
@@ -76,6 +76,7 @@ class MeasurePhotometryTest(unittest.TestCase):
         provider = BatchDataProvider(session)
 
         self.assertEqual(provider.target_auid, 'star1')
+        self.assertEqual(provider.chart_id, 'chart1')
         sbp = provider.sequence_band_pair(('A', 'B'))
         self.assertSequenceEqual(sbp.colnames, ['auid', 'A', 'B'])
         # star3 should not be included in the sequence

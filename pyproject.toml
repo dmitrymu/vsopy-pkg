@@ -43,6 +43,7 @@ vso-list-images = "vsopy.scripts.list_images:main"
 vso-batch-images = "vsopy.scripts.batch_images:main"
 vso-measure-images = "vsopy.scripts.measure_images:main"
 vso-prepare-session = "vsopy.scripts.prepare_session:main"
+vso-diff-simple = "vsopy.scripts.diff_simple:main"
 
 [tool.mypy]
 python_version = "3.10"
