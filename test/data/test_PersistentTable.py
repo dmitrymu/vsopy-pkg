@@ -112,7 +112,7 @@ class PersistentTableTest(unittest.TestCase):
         self.assertEqual(len(t), 0)
         self.assertEqual(set(row.keys()), set(t.colnames))
         t = table.append(row)
-        self.assertEqual(mock_write.call_count, 3)
+        self.assertEqual(mock_write.call_count, 2)
         self.assertEqual(len(t), 1)
         self.assertEqual(dict(t[0]), row)
 
@@ -159,6 +159,21 @@ class PersistentTableTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             table.row_by_key('id', 3)  # multiple rows with id=3
 
+    @patch(f"vsopy.data.persistent_table.Path.exists")
+    @patch(f"vsopy.data.persistent_table.QTable.read")
+    def test_row_by_key_loads_persistent_table(self, mock_read, mock_exists):
+        mock_exists.return_value = True
+        mock_read.return_value = QTable(dict(
+            name=['Polaris'],
+            id=[42],
+        ))
+        table = PersistentTable(TABLE_PATH)
+
+        row = table.row_by_key('name', 'Polaris')
+
+        self.assertEqual(row['id'], 42)
+        mock_read.assert_called_once_with(table.path_, format='ascii.ecsv')
+
     @patch(f"vsopy.data.persistent_table.QTable.write")
     def test_row_by_keys(self, _):
         template = dict(
@@ -199,3 +214,19 @@ class PersistentTableTest(unittest.TestCase):
         self.assertIsNone(table.row_by_keys(dict(name='a', value=40)))
         with self.assertRaises(KeyError):
             table.row_by_keys(dict(name='a', value=44))  # multiple rows with name='a' and value=44
+
+    @patch(f"vsopy.data.persistent_table.Path.exists")
+    @patch(f"vsopy.data.persistent_table.QTable.read")
+    def test_row_by_keys_loads_persistent_table(self, mock_read, mock_exists):
+        mock_exists.return_value = True
+        mock_read.return_value = QTable(dict(
+            name=['Polaris'],
+            fov=[60.0],
+            id=['chart-1'],
+        ))
+        table = PersistentTable(TABLE_PATH)
+
+        row = table.row_by_keys(dict(name='Polaris', fov=60.0))
+
+        self.assertEqual(row['id'], 'chart-1')
+        mock_read.assert_called_once_with(table.path_, format='ascii.ecsv')

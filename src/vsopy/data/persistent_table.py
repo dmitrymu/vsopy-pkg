@@ -35,7 +35,7 @@ class PersistentTable:
         :return: Table read from disk or initialized by the initializer.
         :rtype: :py:class:`~astropy.table.QTable`
         """
-        if not self.table_:
+        if self.table_ is None:
             if self.path_.exists():
                 self.table_ = QTable.read(self.path_, format=self.format_)
             else:
@@ -79,9 +79,8 @@ class PersistentTable:
         :rtype: Row | None
         :raises: KeyError if 'key' matches multiple rows.
         """
-        if self.table_ is None:
-            return None
-        rows = self.get()[self.table_[field] == key]
+        table = self.get()
+        rows = table[table[field] == key]
         if len(rows) > 1:
             raise KeyError(f"{len(rows)} rows found for {field}={key}")
         return None if len(rows) == 0 else rows[0]
@@ -96,10 +95,9 @@ class PersistentTable:
         :rtype: Row | None
         :raises: KeyError if multiple rows match the criteria.
         """
-        if self.table_ is None:
-            return None
-        filter = np.all([self.get()[field] == val for field, val in keys.items()], axis=0)
-        rows = self.get()[filter]
+        table = self.get()
+        filter = np.all([table[field] == val for field, val in keys.items()], axis=0)
+        rows = table[filter]
         if len(rows) > 1:
             raise KeyError(f"{len(rows)} rows found for {keys}")
         return None if len(rows) == 0 else rows[0]

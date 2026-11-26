@@ -113,6 +113,24 @@ class StarDataTest(unittest.TestCase):
         target = sd.get_target('Polaris')
         self.assertEqual(len(target), 6)
 
+    @patch(f"vsopy.data.persistent_table.Path.exists", return_value=True)
+    @patch(f"vsopy.data.persistent_table.QTable.read")
+    @patch.object(PersistentTable, 'append')
+    @patch.object(AavsoApi, 'get_vsx_votable')
+    def test_get_target_uses_persisted_cache(
+            self, get_vsx_votable, append, mock_read, _):
+        mock_read.return_value = TARGETS_TABLE
+        sd = StarData('/home/test')
+
+        target = sd.get_target('Polaris')
+
+        self.assertEqual(target['auid'], '000-AAA-000')
+        get_vsx_votable.assert_not_called()
+        append.assert_not_called()
+        mock_read.assert_called_once_with(
+            sd.targets_.path_, format='ascii.ecsv'
+        )
+
     @patch(f"vsopy.data.star_data.QTable.write")
     @patch.object(AavsoApi, 'get_star_chart')
     @patch.object(AavsoApi, 'get_vsx_votable')
