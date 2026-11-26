@@ -7,7 +7,10 @@ from astropy.nddata import CCDData # type: ignore
 from astropy.table import QTable, Column # type: ignore
 from photutils.aperture import (ApertureStats, # type: ignore
                                 SkyCircularAperture,
-                                SkyCircularAnnulus)
+                                SkyCircularAnnulus,
+                                SkyRectangularAperture,
+                                SkyRectangularAnnulus,
+                                )
 from vsopy.util import Aperture
 
 
@@ -85,12 +88,18 @@ def measure_photometry(image:CCDData, stars:QTable, aperture:Aperture,
 
     corrected = CCDData(image)
 
-    apr = SkyCircularAperture(stars['radec2000'], r=aperture.r)
+    apr = (SkyCircularAperture(stars['radec2000'], r=aperture.r)
+           if aperture.shape == Aperture.Shape.CIRCULAR else
+           SkyRectangularAperture(stars['radec2000'], w=aperture.r, h=aperture.r))
     ap_stats = ApertureStats(corrected, apr)
 
-    ann = SkyCircularAnnulus(stars['radec2000'],
-                             r_in=aperture.r_in,
-                             r_out=aperture.r_out)
+    ann = (SkyCircularAnnulus(stars['radec2000'],
+                              r_in=aperture.r_in,
+                              r_out=aperture.r_out)
+           if aperture.shape == Aperture.Shape.CIRCULAR else
+           SkyRectangularAnnulus(stars['radec2000'],
+                                 w_in=aperture.r_in, h_in=aperture.r_in,
+                                 w_out=aperture.r_out, h_out=aperture.r_out))
     ann_stats = ApertureStats(corrected, ann)
 
     zero_level = 1_000_000 * image.unit / u.second

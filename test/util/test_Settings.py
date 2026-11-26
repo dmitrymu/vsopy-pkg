@@ -13,32 +13,41 @@ class ApertureTest(unittest.TestCase):
         self.assertEqual(ap.r, 1*u.arcsec)
         self.assertEqual(ap.r_in, 2*u.arcsec)
         self.assertEqual(ap.r_out, 3*u.arcsec)
+        self.assertEqual(ap.shape, Aperture.Shape.CIRCULAR)
 
         ap = Aperture(1, 2, 3*u.arcmin)
         self.assertEqual(ap.r, 1*u.arcsec)
         self.assertEqual(ap.r_in, 2*u.arcsec)
         self.assertEqual(ap.r_out, 180*u.arcsec)
+        self.assertEqual(ap.shape, Aperture.Shape.CIRCULAR)
 
         ap = Aperture(1, 2, 3, unit=u.arcmin)
         self.assertEqual(ap.r, 1*u.arcmin)
         self.assertEqual(ap.r_in, 2*u.arcmin)
         self.assertEqual(ap.r_out, 3*u.arcmin)
+        self.assertEqual(ap.shape, Aperture.Shape.CIRCULAR)
+
+        ap = Aperture(1, 2, 3, shape=Aperture.Shape.RECTANGULAR)
+        self.assertEqual(ap.shape, Aperture.Shape.RECTANGULAR)
 
     def test_conversion(self):
 
         ap= Aperture(1, 2, 3)
         d = ap.to_dict()
-        self.assertDictEqual(d, dict(r_ap=1, r_in=2, r_out=3, unit=str(u.arcsec)))
+        self.assertDictEqual(d, dict(r_ap=1, r_in=2, r_out=3, unit=str(u.arcsec),
+                                    shape=Aperture.Shape.CIRCULAR.value))
 
         ap1 = Aperture.from_dict(d)
         self.assertEqual(ap1.r, 1*u.arcsec)
         self.assertEqual(ap1.r_in, 2*u.arcsec)
         self.assertEqual(ap1.r_out, 3*u.arcsec)
+        self.assertEqual(ap1.shape, Aperture.Shape.CIRCULAR)
 
         ap2 = ap1.to_pixels(2*u.arcsec/u.pixel)
         self.assertEqual(ap2.r, .5*u.pixel)
         self.assertEqual(ap2.r_in, 1.0*u.pixel)
         self.assertEqual(ap2.r_out, 1.5*u.pixel)
+        self.assertEqual(ap2.shape, Aperture.Shape.CIRCULAR)
 
 class SettingsTest(unittest.TestCase):
 

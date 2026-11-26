@@ -1,15 +1,28 @@
 import astropy.units as u
 import json
 from pathlib import Path
+from enum import Enum
 
 def convert_to_unit(x, unit, equiv=None):
     return (x.to(unit) if equiv is None else x.to(unit, equiv))  if hasattr(x, 'unit') else x * unit
 
 class Aperture:
-    def __init__(self, r, r_in, r_out, unit=u.arcsec, scale=None):
+
+    class Shape(Enum):
+        CIRCULAR = "circular"
+        RECTANGULAR = "rectangular"
+
+    def __init__(self, r, r_in, r_out, unit=u.arcsec, scale=None, shape=None):
+        if shape is None:
+            shape = self.Shape.CIRCULAR
+        self.shape_ = shape
         self.r_ = convert_to_unit(r, unit, scale)
         self.r_in_ = convert_to_unit(r_in, unit, scale)
         self.r_out_ = convert_to_unit(r_out, unit, scale)
+
+    @property
+    def shape(self):
+        return self.shape_
 
     @property
     def r(self):
@@ -25,14 +38,17 @@ class Aperture:
 
     @staticmethod
     def from_dict(d):
-        return Aperture(d['r_ap'], d['r_in'], d['r_out'], u.Unit(d['unit']))
+        return Aperture(d['r_ap'], d['r_in'], d['r_out'], u.Unit(d['unit']),
+                        shape=Aperture.Shape(d.get('shape', Aperture.Shape.CIRCULAR.value)))
 
     def to_dict(self):
         unit = self.r_.unit
         return dict(r_ap=float(self.r.to(unit).value),
                     r_in=float(self.r_in.to(unit).value),
                     r_out=float(self.r_out.to(unit).value),
-                    unit=str(unit))
+                    unit=str(unit),
+                    shape=self.shape.value
+                    )
 
     def to_pixels(self, scale):
         return Aperture(self.r_, self.r_in_, self.r_out_,
