@@ -19,7 +19,8 @@ dependencies = [
   "bottleneck",
   "ccdproc",
   "photutils",
-  "psutil"
+  "psutil",
+  "statsmodels"
 ]
 keywords = ["astrophotometry", "astropy", "aavso"]
 classifiers = [

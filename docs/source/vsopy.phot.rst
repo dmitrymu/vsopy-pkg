@@ -28,6 +28,14 @@ vsopy.phot.measure module
    :show-inheritance:
    :no-undoc-members:
 
+vsopy.phot.quality module
+-------------------------
+
+.. automodule:: vsopy.phot.quality
+   :members:
+   :show-inheritance:
+   :no-undoc-members:
+
 vsopy.phot.transform module
 ---------------------------
 
